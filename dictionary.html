@@ -25,39 +25,26 @@
   --btn-text: #374151;
   --btn-active-bg: #E5E7EB;
   --btn-active-border: #9CA3AF;
-  --skip-color: #94A3B8;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-.login-screen {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; padding: 20px;
-}
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .login-box {
-  background: var(--card); border-radius: var(--radius);
-  border: 1px solid var(--border); padding: 48px 40px;
-  box-shadow: var(--shadow); max-width: 420px; width: 100%; text-align: center;
+  background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 48px 40px; box-shadow: var(--shadow); max-width: 420px; width: 100%; text-align: center;
 }
 .login-box h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; color: var(--accent-text); }
 .login-box .subtitle { color: var(--text-secondary); margin-bottom: 36px; font-size: 14px; line-height: 1.6; }
 .login-box input {
-  width: 100%; padding: 14px 16px; border: 1.5px solid var(--border);
-  border-radius: 8px; font-size: 16px; font-family: inherit;
-  outline: none; background: #FAFAFA; color: var(--text);
+  width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 16px; font-family: inherit; outline: none; background: #FAFAFA; color: var(--text);
 }
 .login-box input:focus { border-color: var(--accent); }
 .login-box input::placeholder { color: var(--text-tertiary); }
 .login-box button {
-  width: 100%; padding: 14px; margin-top: 16px;
-  background: var(--accent); color: #fff; border: none;
-  border-radius: 8px; font-size: 16px; font-weight: 600;
-  font-family: inherit; cursor: pointer;
+  width: 100%; padding: 14px; margin-top: 16px; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer;
 }
 .login-box button:hover { opacity: 0.9; }
 
@@ -70,26 +57,34 @@ body {
 }
 .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .header-title { font-size: 16px; font-weight: 700; color: var(--accent-text); }
+.header-right { display: flex; align-items: center; gap: 12px; }
 .worker-badge {
   background: var(--accent-light); padding: 4px 12px; border-radius: 20px;
   font-size: 12px; font-weight: 600; color: var(--accent-text); border: 1px solid #BBF7D0;
 }
+.save-indicator { font-size: 11px; color: var(--text-tertiary); }
+.save-indicator.saving { color: var(--accent); }
 .progress-bar { height: 5px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
 .progress-text { font-size: 12px; color: var(--text-secondary); margin-top: 6px; text-align: right; font-variant-numeric: tabular-nums; }
 
 .content { display: flex; flex: 1; }
 
-.cards-section { flex: 1; padding: 24px; max-width: 740px; }
+/* Sol: kelime kartları - ortada */
+.cards-section {
+  flex: 1; padding: 24px 40px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.cards-container { width: 100%; max-width: 560px; }
 
 .word-card {
   background: var(--card); border-radius: var(--radius);
-  padding: 28px 28px 24px; margin-bottom: 14px;
+  padding: 28px 32px 24px; margin-bottom: 14px;
   box-shadow: var(--shadow); border: 1px solid var(--border);
   border-left: 4px solid transparent; transition: all 0.2s;
 }
 .word-card.selected { border-left-color: var(--accent); background: var(--accent-light); }
-.word-card.skipped { border-left-color: var(--skip-color); opacity: 0.6; }
 
 .word-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
 .word-text { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
@@ -97,18 +92,36 @@ body {
 
 .type-buttons { display: flex; gap: 8px; }
 .type-btn {
-  flex: 1; padding: 11px 6px; border: 1.5px solid var(--btn-border);
+  flex: 1; padding: 12px 6px; border: 1.5px solid var(--btn-border);
   border-radius: 8px; background: var(--btn-bg); font-size: 14px;
   font-weight: 600; font-family: inherit; cursor: pointer;
   transition: all 0.15s; color: var(--btn-text);
 }
 .type-btn:hover { background: var(--btn-active-bg); border-color: var(--btn-active-border); transform: translateY(-1px); }
 .type-btn.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
-.type-btn.skip-btn.active { background: var(--skip-color); border-color: var(--skip-color); color: #FFFFFF; }
 
+/* Nav butonları */
+.nav-buttons {
+  display: flex; gap: 10px; margin-top: 20px; width: 100%; max-width: 560px;
+}
+.nav-btn {
+  padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.15s; border: 1.5px solid var(--border);
+}
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.back-btn { background: var(--card); color: var(--text-secondary); }
+.back-btn:hover:not(:disabled) { background: var(--btn-active-bg); }
+.next-btn {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+  flex: 1; text-align: center;
+}
+.next-btn:hover:not(:disabled) { opacity: 0.9; }
+.next-btn:disabled { background: var(--btn-bg); color: var(--text-tertiary); border-color: var(--border); }
+
+/* Sağ: sidebar */
 .sidebar {
-  width: 320px; background: var(--card); border-left: 1px solid var(--border);
-  padding: 24px; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
+  width: 280px; background: var(--card); border-left: 1px solid var(--border);
+  padding: 24px 20px; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
 }
 .sidebar-heading { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 16px; }
 .type-desc {
@@ -152,19 +165,26 @@ body {
   <div class="header">
     <div class="header-top">
       <span class="header-title">Word Classifier</span>
-      <span class="worker-badge" id="workerBadge">—</span>
+      <div class="header-right">
+        <span class="save-indicator" id="saveIndicator"></span>
+        <span class="worker-badge" id="workerBadge">—</span>
+      </div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="progress-text" id="progressText">Loading...</div>
   </div>
   <div class="error-banner" id="errorBanner"></div>
   <div class="content">
-    <div class="cards-section" id="cardsSection">
+    <div class="cards-section">
       <div class="loading-overlay" id="loadingState">
         <div class="spinner"></div>
         <span style="color:var(--text-secondary); font-size:14px;">Loading words...</span>
       </div>
-      <div id="wordCards"></div>
+      <div class="cards-container" id="wordCards"></div>
+      <div class="nav-buttons" id="navButtons" style="display:none;">
+        <button class="nav-btn back-btn" id="backBtn" onclick="goBack()" disabled>← Back</button>
+        <button class="nav-btn next-btn" id="nextBtn" onclick="goNext()" disabled>Next →</button>
+      </div>
       <div class="done-screen" id="doneScreen">
         <h2>All Done!</h2>
         <p>You've classified every word. Thank you!</p>
@@ -192,15 +212,17 @@ body {
 var API_URL = 'https://script.google.com/macros/s/AKfycbzoWQ5WZvXOzKQXDhOcAcRcophfZ5RoOLZdeQFzLTskL0uEO3ckga6dIVDsrPhO0xqWhQ/exec';
 var PREFETCH_SIZE = 60;
 var SHOW_SIZE = 3;
+var SAVE_EVERY = 50;
 
 var workerId = '';
 var wordCache = [];
-var currentBatch = [];
-var selections = {};
+var allBatches = [];   // tüm batch geçmişi: [{words:[...], selections:{}}]
+var currentIndex = -1; // şu an gösterilen batch index
 var totalWords = 0;
 var doneWords = 0;
 var isFetching = false;
 var submitQueue = [];
+var submitCount = 0;
 var isSubmitting = false;
 
 // ── JSONP ──
@@ -232,11 +254,10 @@ function startApp() {
   document.getElementById('workerBadge').textContent = workerId;
   fetchWords(true);
 }
-
 (function() { var s = localStorage.getItem('workerId'); if (s) document.getElementById('workerInput').value = s; })();
 document.getElementById('workerInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') startApp(); });
 
-// ── Fetch & Cache ──
+// ── Fetch ──
 function fetchWords(showLoading) {
   if (isFetching) return;
   isFetching = true;
@@ -252,22 +273,16 @@ function fetchWords(showLoading) {
     updateProgress();
 
     if (!data.words || data.words.length === 0) {
-      if (wordCache.length === 0 && currentBatch.length === 0) showDone();
+      if (wordCache.length === 0 && currentIndex < 0) showDone();
       return;
     }
 
-    // Cache'e ekle (duplicate olmasın)
     var existing = {};
     wordCache.forEach(function(w) { existing[w.kelime] = true; });
-    currentBatch.forEach(function(w) { existing[w.kelime] = true; });
-    data.words.forEach(function(w) {
-      if (!existing[w.kelime]) wordCache.push(w);
-    });
+    allBatches.forEach(function(b) { b.words.forEach(function(w) { existing[w.kelime] = true; }); });
+    data.words.forEach(function(w) { if (!existing[w.kelime]) wordCache.push(w); });
 
-    if (showLoading) {
-      showNextBatch();
-      setLoading(false);
-    }
+    if (showLoading) { goNext(); setLoading(false); }
   })
   .catch(function(err) {
     isFetching = false;
@@ -276,30 +291,51 @@ function fetchWords(showLoading) {
   });
 }
 
-// ── Sonraki 3 kelimeyi göster (cache'den, anında) ──
-function showNextBatch() {
+// ── İleri ──
+function goNext() {
+  // Eğer ileriye gidilecek kayıtlı batch varsa (geri geldikten sonra)
+  if (currentIndex < allBatches.length - 1) {
+    currentIndex++;
+    renderBatch();
+    updateNav();
+    return;
+  }
+
+  // Cache'den yeni batch oluştur
   if (wordCache.length === 0) {
     fetchWords(true);
     return;
   }
 
-  currentBatch = wordCache.splice(0, SHOW_SIZE);
-  selections = {};
-  renderCards();
+  var batchWords = wordCache.splice(0, SHOW_SIZE);
+  var batch = { words: batchWords, selections: {} };
+  allBatches.push(batch);
+  currentIndex = allBatches.length - 1;
+  renderBatch();
+  updateNav();
 
-  // Cache azaldıysa arka planda daha fazla yükle
-  if (wordCache.length < 15) {
-    fetchWords(false);
-  }
+  if (wordCache.length < 15) fetchWords(false);
+}
+
+// ── Geri ──
+function goBack() {
+  if (currentIndex <= 0) return;
+  currentIndex--;
+  renderBatch();
+  updateNav();
 }
 
 // ── Render ──
-function renderCards() {
+function renderBatch() {
+  var batch = allBatches[currentIndex];
   var container = document.getElementById('wordCards');
   container.innerHTML = '';
-  currentBatch.forEach(function(w, i) {
+  document.getElementById('navButtons').style.display = 'flex';
+
+  batch.words.forEach(function(w, i) {
+    var sel = batch.selections[i];
     var card = document.createElement('div');
-    card.className = 'word-card';
+    card.className = 'word-card' + (sel !== undefined ? ' selected' : '');
     card.id = 'card-' + i;
     card.innerHTML =
       '<div class="word-top">' +
@@ -307,10 +343,9 @@ function renderCards() {
         '<span class="word-meta">' + w.harf_sayisi + ' letters</span>' +
       '</div>' +
       '<div class="type-buttons">' +
-        '<button class="type-btn" onclick="selectType(' + i + ', 1)">Type 1</button>' +
-        '<button class="type-btn" onclick="selectType(' + i + ', 2)">Type 2</button>' +
-        '<button class="type-btn" onclick="selectType(' + i + ', 3)">Type 3</button>' +
-        '<button class="type-btn skip-btn" onclick="selectType(' + i + ', 0)">Skip</button>' +
+        '<button class="type-btn' + (sel === 1 ? ' active' : '') + '" onclick="selectType(' + i + ', 1)">Type 1</button>' +
+        '<button class="type-btn' + (sel === 2 ? ' active' : '') + '" onclick="selectType(' + i + ', 2)">Type 2</button>' +
+        '<button class="type-btn' + (sel === 3 ? ' active' : '') + '" onclick="selectType(' + i + ', 3)">Type 3</button>' +
       '</div>';
     container.appendChild(card);
   });
@@ -318,64 +353,107 @@ function renderCards() {
 
 // ── Select ──
 function selectType(index, type) {
-  selections[index] = type;
+  var batch = allBatches[currentIndex];
+  batch.selections[index] = type;
 
   var card = document.getElementById('card-' + index);
-  card.className = 'word-card';
-  if (type === 0) card.classList.add('skipped');
-  else card.classList.add('selected');
-
+  card.className = 'word-card selected';
   var btns = card.querySelectorAll('.type-btn');
   btns.forEach(function(b) { b.classList.remove('active'); });
-  if (type >= 1 && type <= 3) btns[type - 1].classList.add('active');
-  else if (type === 0) btns[3].classList.add('active');
+  btns[type - 1].classList.add('active');
 
-  // Hepsi seçildi mi?
-  var allDone = currentBatch.every(function(_, i) { return selections[i] !== undefined; });
-  if (allDone) {
-    // Arka planda kaydet (beklemeden)
-    currentBatch.forEach(function(w, i) {
-      submitQueue.push({
-        kelime: w.kelime,
-        harf_sayisi: w.harf_sayisi,
-        score: w.score,
-        type: selections[i] === 0 ? 'skip' : selections[i]
-      });
+  updateNav();
+}
+
+// ── Nav güncelle ──
+function updateNav() {
+  var batch = allBatches[currentIndex];
+  var allSelected = batch.words.every(function(_, i) { return batch.selections[i] !== undefined; });
+
+  document.getElementById('backBtn').disabled = (currentIndex <= 0);
+
+  var nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = !allSelected;
+  nextBtn.textContent = allSelected ? 'Next →' : 'Select all types to continue';
+}
+
+// ── Next tıklandığında ──
+var originalGoNext = goNext;
+goNext = function() {
+  // Mevcut batch'i submit kuyruğuna ekle
+  if (currentIndex >= 0 && currentIndex === allBatches.length - 1) {
+    var batch = allBatches[currentIndex];
+    var allSelected = batch.words.every(function(_, i) { return batch.selections[i] !== undefined; });
+    if (!allSelected) return;
+
+    batch.words.forEach(function(w, i) {
+      if (!batch.submitted) {
+        submitQueue.push({
+          kelime: w.kelime,
+          harf_sayisi: w.harf_sayisi,
+          score: w.score,
+          type: batch.selections[i]
+        });
+      }
     });
-    doneWords += currentBatch.length;
+    batch.submitted = true;
+    doneWords += batch.words.length;
+    submitCount += batch.words.length;
     updateProgress();
-    processSubmitQueue();
 
-    // ANINDA sonraki batch'i göster
-    setTimeout(showNextBatch, 150);
+    // Her SAVE_EVERY kelimede kaydet
+    if (submitCount >= SAVE_EVERY || submitQueue.length >= SAVE_EVERY) {
+      flushQueue();
+    }
   }
+  originalGoNext();
+};
+
+// ── Kuyruğu kaydet ──
+function flushQueue() {
+  if (submitQueue.length === 0) return;
+  setSaveIndicator('Saving...');
+  var toSend = submitQueue.splice(0);
+  var idx = 0;
+
+  function sendNext() {
+    if (idx >= toSend.length) {
+      setSaveIndicator('Saved ✓');
+      setTimeout(function() { setSaveIndicator(''); }, 2000);
+      return;
+    }
+    var item = toSend[idx];
+    apiFetch({
+      action: 'submit', kelime: item.kelime, harf_sayisi: item.harf_sayisi,
+      score: item.score, type: item.type, worker: workerId
+    })
+    .then(function() { idx++; sendNext(); })
+    .catch(function() {
+      // Tekrar dene
+      setTimeout(sendNext, 1000);
+    });
+  }
+  sendNext();
 }
 
-// ── Arka planda kaydet (UI'ı bloklamadan) ──
-function processSubmitQueue() {
-  if (isSubmitting || submitQueue.length === 0) return;
-  isSubmitting = true;
+// Sayfa kapanırken kalan kuyruğu kaydet
+window.addEventListener('beforeunload', function() {
+  if (submitQueue.length > 0) {
+    submitQueue.forEach(function(item) {
+      var url = new URL(API_URL);
+      url.searchParams.set('action', 'submit');
+      url.searchParams.set('kelime', item.kelime);
+      url.searchParams.set('harf_sayisi', item.harf_sayisi);
+      url.searchParams.set('score', item.score);
+      url.searchParams.set('type', item.type);
+      url.searchParams.set('worker', workerId);
+      navigator.sendBeacon(url.toString());
+    });
+  }
+});
 
-  var item = submitQueue.shift();
-  apiFetch({
-    action: 'submit',
-    kelime: item.kelime,
-    harf_sayisi: item.harf_sayisi,
-    score: item.score,
-    type: item.type,
-    worker: workerId
-  })
-  .then(function() {
-    isSubmitting = false;
-    if (submitQueue.length > 0) processSubmitQueue();
-  })
-  .catch(function() {
-    // Başarısızsa tekrar kuyruğa ekle
-    submitQueue.unshift(item);
-    isSubmitting = false;
-    setTimeout(processSubmitQueue, 2000);
-  });
-}
+// Her 2 dakikada da flush et (güvenlik)
+setInterval(function() { if (submitQueue.length > 0) flushQueue(); }, 120000);
 
 // ── UI ──
 function updateProgress() {
@@ -383,15 +461,23 @@ function updateProgress() {
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressText').textContent = doneWords.toLocaleString() + ' / ' + totalWords.toLocaleString() + ' (' + pct.toFixed(1) + '%)';
 }
+function setSaveIndicator(text) {
+  var el = document.getElementById('saveIndicator');
+  el.textContent = text;
+  el.className = 'save-indicator' + (text.indexOf('Saving') >= 0 ? ' saving' : '');
+}
 function setLoading(show) {
   document.getElementById('loadingState').style.display = show ? 'flex' : 'none';
   document.getElementById('wordCards').style.display = show ? 'none' : 'block';
+  document.getElementById('navButtons').style.display = show ? 'none' : 'flex';
   document.getElementById('doneScreen').style.display = 'none';
 }
 function showDone() {
   setLoading(false);
   document.getElementById('wordCards').style.display = 'none';
+  document.getElementById('navButtons').style.display = 'none';
   document.getElementById('doneScreen').style.display = 'block';
+  flushQueue();
 }
 function showError(msg) { var el = document.getElementById('errorBanner'); el.textContent = msg; el.style.display = 'block'; }
 function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
