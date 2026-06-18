@@ -98,12 +98,16 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 .page-info { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 
 .sidebar {
-  width: 280px; background: var(--card); border-left: 1px solid var(--border);
-  padding: 24px 20px; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
+  width: 500px; background: var(--card); border-left: 1px solid var(--border);
+  padding: 18px 16px; position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
 }
-.sidebar-heading { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 16px; }
-.type-desc { padding: 14px 16px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; line-height: 1.6; background: #F9FAFB; border: 1px solid var(--border); color: var(--text); }
-.type-desc h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.sidebar-heading { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 12px; }
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.type-desc { padding: 10px 12px; border-radius: 8px; margin-bottom: 0; font-size: 11.5px; line-height: 1.5; background: #F9FAFB; border: 1px solid var(--border); color: var(--text); }
+.type-desc h3 { font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+.type-desc ul { margin: 4px 0 4px 14px; padding: 0; }
+.type-desc li { margin-bottom: 2px; line-height: 1.45; }
+.type-desc .kisacasi { font-size: 11px; font-style: italic; color: var(--text-secondary); margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--border); }
 
 .loading-overlay { display: flex; align-items: center; justify-content: center; padding: 80px 20px; flex-direction: column; gap: 16px; }
 .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -121,9 +125,13 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 @media (max-width: 900px) {
   .content { flex-direction: column-reverse; }
   .sidebar { width: 100%; position: static; height: auto; border-left: none; border-bottom: 1px solid var(--border); }
+  .type-grid { grid-template-columns: 1fr 1fr; }
   .cards-section { padding: 16px; }
   .word-text { font-size: 20px; }
   .word-card { padding: 16px; }
+}
+@media (max-width: 500px) {
+  .type-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -177,11 +185,57 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
       </div>
     </div>
     <div class="sidebar">
-      <div class="sidebar-heading">Type Descriptions</div>
-      <div class="type-desc"><h3>Type 1 — Common</h3>Words that most people know and use regularly in everyday conversation. Basic, familiar words.</div>
-      <div class="type-desc"><h3>Type 2 — Intermediate</h3>Words that educated people know but might not use every day. Slightly less common, but still widely understood.</div>
-      <div class="type-desc"><h3>Type 3 — Rare / Specialized</h3>Words that only specialists, academics, or older generations would know. Uncommon in daily speech.</div>
-      <div class="type-desc"><h3>Type 4</h3></div>
+      <div class="sidebar-heading">Type Açıklamaları</div>
+      <div class="type-grid">
+        <div class="type-desc">
+          <h3>Type 1 — Oyunda Kullanılamaz</h3>
+          <ul>
+            <li>Özel isim özelliği çok baskın kelimeler (ör. Ali gibi kişi adları; İpek olabilir)</li>
+            <li>Küfür, argo, hakaret, cinsel içerik veya şiddete doğrudan atıf</li>
+            <li>Alkollü içecek veya uyuşturucu madde adları</li>
+            <li>Ağır hastalık, travma veya güçlü rahatsızlık uyandıranlar</li>
+            <li>İğrenç veya tiksinti uyandıran kelimeler</li>
+            <li>Anlamı bilinmeyen ya da doğrulanamayan kelimeler</li>
+          </ul>
+          <p class="kisacasi">Ya yapısal olarak uygun değil, ya içerik olarak sakıncalı, ya da anlamı belirsiz.</p>
+        </div>
+        <div class="type-desc">
+          <h3>Type 2 — Geçerli Ama Oyun İçin Uygun Değil</h3>
+          <ul>
+            <li>Nadir, eski, edebi veya bölgesel kelimeler (ör. dilber, tirit)</li>
+            <li>Teknik terimler: tıp, hukuk, kimya, bilgisayar, dilbilgisi vb.</li>
+            <li>Kullanımı dar, resmi veya bölgesel kelimeler (ör. epeyce, fiziki)</li>
+            <li>Hafif olumsuz ama Type 1 kadar ağır olmayan (ör. dırdır, dişsiz)</li>
+            <li>Türetilmiş ama bağımsız kelime olarak zayıf formlar (ör. burunlu, filmci)</li>
+            <li>Fiil kökü veya emir kipi gibi görünen formlar (ör. tanı, tanış)</li>
+            <li>Dini terimler, hassas kimlik ifadeleri, ağır sağlık konuları</li>
+          </ul>
+          <p class="kisacasi">Kelime gerçek ve anlamlı, ama ya çoğu kişi bilmez, ya çok niş, ya da oyun bağlamında sorunlu.</p>
+        </div>
+        <div class="type-desc">
+          <h3>Type 3 — Oynanabilir Kelime</h3>
+          <ul>
+            <li>Ortalama Türk oyuncusunun bağlam olmadan tanıyabileceği kelimeler</li>
+            <li>Farklı günlük bağlamlarda aktif olarak kullanılan kelimeler</li>
+            <li>Sözlükte var olmak yetmez; geniş çapta bilinmeli ve kullanılmalı</li>
+            <li>Fiiller -mak/-mek haliyle, yaygınsa buraya girer (ör. dolmak, duymak)</li>
+            <li>Somut nesneler (ör. taksi), yaygın sıfatlar (ör. terli), bilinen soyut kavramlar (ör. esaret)</li>
+            <li>Hafif olumsuz ama herkesçe bilinen ve aktif kullanılan (ör. düşman, doymaz)</li>
+          </ul>
+          <p class="kisacasi">Herkes bilir, herkes anlar, oyunda kimseyi şaşırtmaz.</p>
+        </div>
+        <div class="type-desc">
+          <h3>Type 4 — Çekirdek Kelime</h3>
+          <ul>
+            <li>Yaşı, eğitimi veya bölgesi fark etmeksizin herkesin bildiği ve kullandığı kelimeler</li>
+            <li>Günlük konuşmanın vazgeçilmezi: temel isimler, sıfatlar, fiiller ve kavramlar</li>
+            <li>Fiiller -mak/-mek haliyle dahil, temel ve anlaşılır olmalı (ör. yemek, içmek, anlatmak)</li>
+            <li>Hiçbir açıklamaya ihtiyaç duymadan herkesin aklına aynı şeyin geldiği kelimeler</li>
+            <li>Güzel, temiz, açık Türkçe — dilin iskeletini oluşturan çekirdek havuz (ör. yol, güneş, büyük, anne, baba)</li>
+          </ul>
+          <p class="kisacasi">Türkçenin herkes tarafından bilinen, günlük hayatın içinden, tartışmasız kelimeleri.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
