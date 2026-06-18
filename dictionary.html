@@ -181,6 +181,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
       <div class="type-desc"><h3>Type 1 — Common</h3>Words that most people know and use regularly in everyday conversation. Basic, familiar words.</div>
       <div class="type-desc"><h3>Type 2 — Intermediate</h3>Words that educated people know but might not use every day. Slightly less common, but still widely understood.</div>
       <div class="type-desc"><h3>Type 3 — Rare / Specialized</h3>Words that only specialists, academics, or older generations would know. Uncommon in daily speech.</div>
+      <div class="type-desc"><h3>Type 4</h3></div>
     </div>
   </div>
 </div>
@@ -266,7 +267,7 @@ function loadAllWords() {
     allWords.forEach(function(w, i) {
       if (w.type) {
         var t = parseInt(w.type);
-        if (t >= 1 && t <= 3) {
+        if (t >= 1 && t <= 4) {
           selections[i] = t;
           savedSelections[i] = t;
           totalDone++;
@@ -313,12 +314,13 @@ function renderPage() {
     card.innerHTML =
       '<div class="word-top">' +
         '<span class="word-text"><span class="word-index">' + (i + 1) + '</span>' + escapeHtml(w.kelime) + '</span>' +
-        '<span class="word-meta">' + w.harf_sayisi + ' letters</span>' +
+        '<span class="word-meta">' + w.kelime.length + ' letters</span>' +
       '</div>' +
       '<div class="type-buttons">' +
         '<button class="type-btn' + (sel === 1 ? ' active' : '') + '" onclick="selectType(' + i + ',1)">Type 1</button>' +
         '<button class="type-btn' + (sel === 2 ? ' active' : '') + '" onclick="selectType(' + i + ',2)">Type 2</button>' +
         '<button class="type-btn' + (sel === 3 ? ' active' : '') + '" onclick="selectType(' + i + ',3)">Type 3</button>' +
+        '<button class="type-btn' + (sel === 4 ? ' active' : '') + '" onclick="selectType(' + i + ',4)">Type 4</button>' +
       '</div>';
     container.appendChild(card);
   }
@@ -387,7 +389,7 @@ function saveCurrentPage() {
     }
     var item = q.shift();
     apiFetch({
-      action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.harf_sayisi,
+      action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.kelime.length,
       score: item.w.score, type: item.type, worker: workerId, task: TASK
     })
     .then(function() { savedSelections[item.idx] = item.type; next(); })
