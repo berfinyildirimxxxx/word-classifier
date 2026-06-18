@@ -196,66 +196,98 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
       </div>
     </div>
     <div class="sidebar">
-      <div class="sidebar-heading">Type Açıklamaları</div>
       <button class="sidebar-toggle" id="typeToggle" onclick="toggleTypeDesc()">
-        Type Açıklamaları <span class="toggle-icon" id="toggleIcon">▼</span>
+        <span id="toggleLabel">Type Descriptions</span> <span class="toggle-icon" id="toggleIcon">▼</span>
       </button>
-      <div class="type-grid" id="typeGrid">
-        <div class="type-desc">
-          <h3>Type 1 — Oyunda Kullanılamaz</h3>
-          <ul>
-            <li>Özel isim özelliği çok baskın kelimeler (ör. Ali gibi kişi adları; İpek olabilir)</li>
-            <li>Küfür, argo, hakaret, cinsel içerik veya şiddete doğrudan atıf</li>
-            <li>Alkollü içecek veya uyuşturucu madde adları</li>
-            <li>Ağır hastalık, travma veya güçlü rahatsızlık uyandıranlar</li>
-            <li>İğrenç veya tiksinti uyandıran kelimeler</li>
-            <li>Anlamı bilinmeyen ya da doğrulanamayan kelimeler</li>
-          </ul>
-          <p class="kisacasi">Ya yapısal olarak uygun değil, ya içerik olarak sakıncalı, ya da anlamı belirsiz.</p>
-        </div>
-        <div class="type-desc">
-          <h3>Type 2 — Geçerli Ama Oyun İçin Uygun Değil</h3>
-          <ul>
-            <li>Nadir, eski, edebi veya bölgesel kelimeler (ör. dilber, tirit)</li>
-            <li>Teknik terimler: tıp, hukuk, kimya, bilgisayar, dilbilgisi vb.</li>
-            <li>Kullanımı dar, resmi veya bölgesel kelimeler (ör. epeyce, fiziki)</li>
-            <li>Hafif olumsuz ama Type 1 kadar ağır olmayan (ör. dırdır, dişsiz)</li>
-            <li>Türetilmiş ama bağımsız kelime olarak zayıf formlar (ör. burunlu, filmci)</li>
-            <li>Fiil kökü veya emir kipi gibi görünen formlar (ör. tanı, tanış)</li>
-            <li>Dini terimler, hassas kimlik ifadeleri, ağır sağlık konuları</li>
-            <li>Olumsuzluk eki almış ve yeni bir kelime oluşturmamış fiiller (ör. Anlatma Type 3 iken Gitme Type 2 olabilir. Olumsuzluk anlamı daha ağır basıyorsa oyun için uygun değildir.</li> 
-          </ul>
-          <p class="kisacasi">Kelime gerçek ve anlamlı, ama ya çoğu kişi bilmez, ya çok niş, ya da oyun bağlamında sorunlu.</p>
-        </div>
-        <div class="type-desc">
-          <h3>Type 3 — Oynanabilir Kelime</h3>
-          <ul>
-            <li>Ortalama Türk oyuncusunun bağlam olmadan tanıyabileceği kelimeler</li>
-            <li>Farklı günlük bağlamlarda aktif olarak kullanılan kelimeler</li>
-            <li>Sözlükte var olmak yetmez; geniş çapta bilinmeli ve kullanılmalı</li>
-            <li>Fiiller -mak/-mek haliyle, yaygınsa buraya girer (ör. dolmak, duymak)</li>
-            <li>Somut nesneler (ör. taksi), yaygın sıfatlar (ör. terli), bilinen soyut kavramlar (ör. esaret)</li>
-            <li>Hafif olumsuz ama herkesçe bilinen ve aktif kullanılan (ör. düşman, doymaz)</li>
-          </ul>
-          <p class="kisacasi">Herkes bilir, herkes anlar, oyunda kimseyi şaşırtmaz.</p>
-        </div>
-        <div class="type-desc">
-          <h3>Type 4 — Çekirdek Kelime</h3>
-          <ul>
-            <li>Yaşı, eğitimi veya bölgesi fark etmeksizin herkesin bildiği ve kullandığı kelimeler</li>
-            <li>Günlük konuşmanın vazgeçilmezi: temel isimler, sıfatlar, fiiller ve kavramlar</li>
-            <li>Fiiller -mak/-mek haliyle dahil, temel ve anlaşılır olmalı (ör. yemek, içmek, anlatmak)</li>
-            <li>Hiçbir açıklamaya ihtiyaç duymadan herkesin aklına aynı şeyin geldiği kelimeler</li>
-            <li>Güzel, temiz, açık Türkçe — dilin iskeletini oluşturan çekirdek havuz (ör. yol, güneş, büyük, anne, baba)</li>
-          </ul>
-          <p class="kisacasi">Türkçenin herkes tarafından bilinen, günlük hayatın içinden, tartışmasız kelimeleri.</p>
-        </div>
-      </div>
+      <div class="type-grid" id="typeGrid"></div>
     </div>
   </div>
 </div>
 
 <script>
+var DESCRIPTIONS = {
+  TR: {
+    label: 'Type Açıklamaları',
+    types: [
+      { title: 'Type 1 — Oyunda Kullanılamaz', bullets: [
+          'Özel isim özelliği çok baskın kelimeler (ör. Ali gibi kişi adları; İpek olabilir)',
+          'Küfür, argo, hakaret, cinsel içerik veya şiddete doğrudan atıf',
+          'Alkollü içecek veya uyuşturucu madde adları',
+          'Ağır hastalık, travma veya güçlü rahatsızlık uyandıranlar',
+          'İğrenç veya tiksinti uyandıran kelimeler',
+          'Anlamı bilinmeyen ya da doğrulanamayan kelimeler'
+        ], kisacasi: 'Ya yapısal olarak uygun değil, ya içerik olarak sakıncalı, ya da anlamı belirsiz.' },
+      { title: 'Type 2 — Geçerli Ama Oyun İçin Uygun Değil', bullets: [
+          'Nadir, eski, edebi veya bölgesel kelimeler (ör. dilber, tirit)',
+          'Teknik terimler: tıp, hukuk, kimya, bilgisayar, dilbilgisi vb.',
+          'Kullanımı dar, resmi veya bölgesel kelimeler (ör. epeyce, fiziki)',
+          'Hafif olumsuz ama Type 1 kadar ağır olmayan (ör. dırdır, dişsiz)',
+          'Türetilmiş ama bağımsız kelime olarak zayıf formlar (ör. burunlu, filmci)',
+          'Fiil kökü veya emir kipi gibi görünen formlar (ör. tanı, tanış)',
+          'Dini terimler, hassas kimlik ifadeleri, ağır sağlık konuları',
+          'Olumsuzluk eki almış yeni bir kelime oluşturmamış fiiller (ör. Anlatma Type 3 iken Gitme Type 2 olabilir)'
+        ], kisacasi: 'Kelime gerçek ve anlamlı, ama ya çoğu kişi bilmez, ya çok niş, ya da oyun bağlamında sorunlu.' },
+      { title: 'Type 3 — Oynanabilir Kelime', bullets: [
+          'Ortalama Türk oyuncusunun bağlam olmadan tanıyabileceği kelimeler',
+          'Farklı günlük bağlamlarda aktif olarak kullanılan kelimeler',
+          'Sözlükte var olmak yetmez; geniş çapta bilinmeli ve kullanılmalı',
+          'Fiiller -mak/-mek haliyle, yaygınsa buraya girer (ör. dolmak, duymak)',
+          'Somut nesneler (ör. taksi), yaygın sıfatlar (ör. terli), bilinen soyut kavramlar (ör. esaret)',
+          'Hafif olumsuz ama herkesçe bilinen ve aktif kullanılan (ör. düşman, doymaz)'
+        ], kisacasi: 'Herkes bilir, herkes anlar, oyunda kimseyi şaşırtmaz.' },
+      { title: 'Type 4 — Çekirdek Kelime', bullets: [
+          'Yaşı, eğitimi veya bölgesi fark etmeksizin herkesin bildiği ve kullandığı kelimeler',
+          'Günlük konuşmanın vazgeçilmezi: temel isimler, sıfatlar, fiiller ve kavramlar',
+          'Fiiller -mak/-mek haliyle dahil, temel ve anlaşılır olmalı (ör. yemek, içmek, anlatmak)',
+          'Hiçbir açıklamaya ihtiyaç duymadan herkesin aklına aynı şeyin geldiği kelimeler',
+          'Güzel, temiz, açık Türkçe — dilin iskeletini oluşturan çekirdek havuz (ör. yol, güneş, büyük, anne, baba)'
+        ], kisacasi: 'Türkçenin herkes tarafından bilinen, günlük hayatın içinden, tartışmasız kelimeleri.' }
+    ]
+  },
+  EN: {
+    label: 'Type Descriptions',
+    types: [
+      { title: 'Type 1 — Excluded', bullets: [
+          'Profanity, slurs, hate speech, or explicit sexual content',
+          'Severe violence, death, traumatic or deeply disturbing content',
+          'Repulsive content (bodily waste, filth, putrefaction)',
+          'Illegal drugs/narcotics (note: beer, wine, vodka are NOT Type 1)',
+          'Brand names, company names, acronyms/abbreviations (e.g. NASA, Jeep)',
+          'Personal names where the name reading is dominant (e.g. Jack, Bob)',
+          'Standalone suffixes/prefixes, truncated contractions (e.g. ish, doesn)',
+          'Nonsensical derived forms; pure interjections (e.g. eww, ugh)',
+          'Unverified words: if you cannot determine the meaning, mark Type 1'
+        ], kisacasi: 'Structurally unsuitable, harmful/offensive content, a proper noun, or meaning unknown.' },
+      { title: 'Type 2 — Valid But Not Suitable for Gameplay', bullets: [
+          'Rare, archaic, literary, or occupation-specific words (e.g. ablution, furlong)',
+          'Technical/specialist terms: science, medicine, law, computing (e.g. isotope, biopsy)',
+          'Too formal, literary, or dated for broad everyday use (e.g. beseech, forthwith)',
+          'Words with crude/sexual slang shadow (e.g. beaver, climax, steamy)',
+          'Regular -ed past tenses (walked, played) and -s/-es plural or 3rd-person forms (dogs, runs)',
+          "Possessive/contraction forms (dog's, it's) and function word inflections (was, had, its)",
+          'Direct insults (e.g. stupid, loser), crime labels (e.g. thief, bully), place names',
+          'Sensitive topics: religious terms, identity labels, non-severe health conditions'
+        ], kisacasi: 'Real and meaningful, but too niche, wrong grammatical form, or content issues make it unsuitable.' },
+      { title: 'Type 3 — Playable Word', bullets: [
+          'Recognized without specialist context; used across multiple everyday situations',
+          'Being in the dictionary or taught at school alone is NOT enough',
+          'Common objects, foods, materials (e.g. table, bread, phone, hammer)',
+          'Common base verbs (e.g. run, cook), irregular pasts (went, took), -ing forms (running)',
+          'Common adjectives and broadly known concepts (e.g. big, happy, freedom, method)',
+          'Alcoholic beverages when broadly recognized (e.g. beer, wine, whiskey)',
+          'Formal but widely recognized without specialist training (e.g. valuation, disparity)'
+        ], kisacasi: "Everyone knows it, everyone understands it, it won't surprise anyone in the game." },
+      { title: 'Type 4 — Core Word', bullets: [
+          'Known and used by everyone regardless of age, education, or region',
+          'Essential nouns, adjectives, and verbs indispensable in daily conversation',
+          'No explanation or context needed — everyone immediately thinks of the same thing',
+          'The most comfortable and enjoyable layer of the game',
+          'Examples: house, water, sun, big, small, run, eat, mother, father, dog, cat, happy'
+        ], kisacasi: 'Universally known, part of everyday life, unquestionably common English words.' }
+    ]
+  }
+};
+
 var API_URL = 'https://script.google.com/macros/s/AKfycbzoWQ5WZvXOzKQXDhOcAcRcophfZ5RoOLZdeQFzLTskL0uEO3ckga6dIVDsrPhO0xqWhQ/exec';
 var PAGE_SIZE = 10;
 
@@ -314,6 +346,7 @@ function startApp() {
   } else {
     try { var s = localStorage.getItem('workerId'); if (s) document.getElementById('workerInput').value = s; } catch(e) {}
   }
+  renderSidebar();
 })();
 document.getElementById('workerInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') startApp(); });
 
@@ -500,6 +533,16 @@ function toggleTypeDesc() {
   var btn = document.getElementById('typeToggle');
   var isOpen = grid.classList.toggle('open');
   btn.classList.toggle('open', isOpen);
+}
+function renderSidebar() {
+  var desc = DESCRIPTIONS[LANG] || DESCRIPTIONS['TR'];
+  document.getElementById('toggleLabel').textContent = desc.label;
+  var grid = document.getElementById('typeGrid');
+  grid.innerHTML = desc.types.map(function(d) {
+    return '<div class="type-desc"><h3>' + d.title + '</h3><ul>' +
+      d.bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') +
+      '</ul><p class="kisacasi">' + d.kisacasi + '</p></div>';
+  }).join('');
 }
 </script>
 </body>
