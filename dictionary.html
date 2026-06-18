@@ -36,6 +36,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
   border: none; border-radius: 8px; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer;
 }
 .login-box button:hover { opacity: 0.9; }
+.email-error { display: none; color: #DC2626; font-size: 13px; margin-top: 8px; text-align: left; }
 
 .app { display: none; }
 .app.active { display: flex; flex-direction: column; min-height: 100vh; }
@@ -48,6 +49,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 .batch-badge { background: #F3F4F6; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--text-secondary); border: 1px solid var(--border); }
 .save-indicator { font-size: 11px; color: var(--text-tertiary); }
 .save-indicator.saving { color: var(--accent); }
+.lang-badge { background: #EFF6FF; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #1D4ED8; border: 1px solid #BFDBFE; letter-spacing: 0.5px; }
 .progress-bar { height: 5px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
 .progress-text { font-size: 12px; color: var(--text-secondary); margin-top: 6px; text-align: right; font-variant-numeric: tabular-nums; }
@@ -110,6 +112,11 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 .done-screen h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--accent-text); }
 .done-screen p { color: var(--text-secondary); font-size: 15px; }
 .error-banner { display: none; background: #FEF2F2; color: #DC2626; padding: 10px 24px; font-size: 13px; text-align: center; border-bottom: 1px solid #FECACA; }
+.error-full { display: none; text-align: center; padding: 80px 20px; flex-direction: column; align-items: center; gap: 16px; }
+.error-full h2 { font-size: 20px; font-weight: 700; color: #DC2626; }
+.error-full p { color: var(--text-secondary); font-size: 14px; max-width: 400px; line-height: 1.6; }
+.retry-btn { padding: 12px 28px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; margin-top: 8px; }
+.retry-btn:hover { opacity: 0.9; }
 
 @media (max-width: 900px) {
   .content { flex-direction: column-reverse; }
@@ -124,9 +131,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <h1>Word Classifier</h1>
-    <p class="subtitle">Enter your name or a unique number.</p>
-    <input type="text" id="workerInput" placeholder="e.g. ali, maria, 42..." autofocus>
+    <h1 id="loginTitle">Word Classifier</h1>
+    <p class="subtitle">Enter your email address to start classifying.</p>
+    <input type="email" id="workerInput" placeholder="name@example.com" autofocus>
+    <p class="email-error" id="emailError">Please enter a valid email address.</p>
     <button onclick="startApp()">Start</button>
   </div>
 </div>
@@ -137,6 +145,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
       <span class="header-title">Word Classifier</span>
       <div class="header-right">
         <span class="save-indicator" id="saveIndicator"></span>
+        <span class="lang-badge" id="langBadge"></span>
         <span class="batch-badge" id="batchBadge"></span>
         <span class="worker-badge" id="workerBadge">—</span>
       </div>
@@ -150,6 +159,11 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
       <div class="loading-overlay" id="loadingState">
         <div class="spinner"></div>
         <span style="color:var(--text-secondary); font-size:14px;">Loading words...</span>
+      </div>
+      <div class="error-full" id="errorFull">
+        <h2>Could not load words</h2>
+        <p id="errorFullMsg">An error occurred while connecting to the server.</p>
+        <button class="retry-btn" onclick="loadAllWords()">Try Again</button>
       </div>
       <div class="cards-container" id="wordCards"></div>
       <div class="nav-buttons" id="navButtons" style="display:none;">
@@ -177,6 +191,7 @@ var PAGE_SIZE = 10;
 
 // URL parametreleri
 var urlP = new URLSearchParams(window.location.search);
+var LANG = (urlP.get('lang') || 'TR').toUpperCase();
 var BATCH_NUM = parseInt(urlP.get('batch')) || 0;
 var BATCH_SIZE = parseInt(urlP.get('size')) || 5000;
 var PRE_WORKER = urlP.get('worker') || '';
@@ -189,44 +204,54 @@ var currentPage = 0;
 var totalPages = 0;
 var totalDone = 0;
 
-// ── JSONP ──
+// ── Fetch ──
 function apiFetch(params) {
-  return new Promise(function(resolve, reject) {
-    var cb = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-    var timeout = setTimeout(function() { reject(new Error('Timeout')); cleanup(); }, 60000);
-    function cleanup() { clearTimeout(timeout); delete window[cb]; var el = document.getElementById(cb); if (el) el.remove(); }
-    window[cb] = function(data) { resolve(data); cleanup(); };
-    var url = new URL(API_URL);
-    Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
-    url.searchParams.set('callback', cb);
-    var s = document.createElement('script'); s.id = cb; s.src = url.toString();
-    s.onerror = function() { reject(new Error('Network error')); cleanup(); };
-    document.body.appendChild(s);
-  });
+  var url = new URL(API_URL);
+  Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
+  var controller = new AbortController();
+  var timeout = setTimeout(function() { controller.abort(); }, 60000);
+  return fetch(url.toString(), { signal: controller.signal })
+    .then(function(res) { clearTimeout(timeout); if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+    .catch(function(err) { clearTimeout(timeout); if (err.name === 'AbortError') throw new Error('Timeout'); throw err; });
 }
 
 // ── Start ──
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
 function startApp() {
-  var input = document.getElementById('workerInput').value.trim();
+  var input = document.getElementById('workerInput').value.trim().toLowerCase();
   if (!input) return;
+  if (!isValidEmail(input)) {
+    document.getElementById('emailError').style.display = 'block';
+    document.getElementById('workerInput').focus();
+    return;
+  }
+  document.getElementById('emailError').style.display = 'none';
   workerId = input;
-  localStorage.setItem('workerId', workerId);
+  try { localStorage.setItem('workerId', workerId); } catch(e) {}
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('mainApp').classList.add('active');
   document.getElementById('workerBadge').textContent = workerId;
+  document.getElementById('langBadge').textContent = LANG;
   if (BATCH_NUM > 0) document.getElementById('batchBadge').textContent = 'Batch ' + BATCH_NUM;
   loadAllWords();
 }
 (function() {
-  if (PRE_WORKER) document.getElementById('workerInput').value = PRE_WORKER;
-  else { var s = localStorage.getItem('workerId'); if (s) document.getElementById('workerInput').value = s; }
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian' };
+  var name = langNames[LANG] || LANG;
+  document.getElementById('loginTitle').textContent = 'Word Classifier — ' + name;
+  if (PRE_WORKER) {
+    document.getElementById('workerInput').value = PRE_WORKER;
+  } else {
+    try { var s = localStorage.getItem('workerId'); if (s) document.getElementById('workerInput').value = s; } catch(e) {}
+  }
 })();
 document.getElementById('workerInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') startApp(); });
 
 // ── Tum kelimeleri yukle (tek seferde) ──
 function loadAllWords() {
   setLoading(true); hideError();
-  var params = { action: 'getWords', worker: workerId };
+  var params = { action: 'getWords', worker: workerId, lang: LANG };
   if (BATCH_NUM > 0) { params.batch = BATCH_NUM; params.size = BATCH_SIZE; }
 
   apiFetch(params)
@@ -268,7 +293,7 @@ function loadAllWords() {
     renderPage();
     setLoading(false);
   })
-  .catch(function(err) { showError('Loading failed: ' + err.message); setLoading(false); });
+  .catch(function(err) { showError('Loading failed: ' + err.message); });
 }
 
 // ── Render ──
@@ -364,7 +389,7 @@ function saveCurrentPage() {
     var item = q.shift();
     apiFetch({
       action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.harf_sayisi,
-      score: item.w.score, type: item.type, worker: workerId
+      score: item.w.score, type: item.type, worker: workerId, lang: LANG
     })
     .then(function() { savedSelections[item.idx] = item.type; next(); })
     .catch(function() { q.unshift(item); setTimeout(next, 1500); });
@@ -385,13 +410,20 @@ function updateProgress() {
 function setSave(t) { var el = document.getElementById('saveIndicator'); el.textContent = t; el.className = 'save-indicator' + (t.indexOf('Saving') >= 0 ? ' saving' : ''); }
 function setLoading(s) {
   document.getElementById('loadingState').style.display = s ? 'flex' : 'none';
+  document.getElementById('errorFull').style.display = 'none';
   document.getElementById('wordCards').style.display = s ? 'none' : 'block';
   document.getElementById('navButtons').style.display = s ? 'none' : 'flex';
   document.getElementById('doneScreen').style.display = 'none';
 }
 function showDone() { setLoading(false); document.getElementById('wordCards').style.display = 'none'; document.getElementById('navButtons').style.display = 'none'; document.getElementById('doneScreen').style.display = 'block'; saveCurrentPage(); }
-function showError(m) { var el = document.getElementById('errorBanner'); el.textContent = m; el.style.display = 'block'; }
-function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
+function showError(m) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('wordCards').style.display = 'none';
+  document.getElementById('navButtons').style.display = 'none';
+  document.getElementById('errorFullMsg').textContent = m;
+  document.getElementById('errorFull').style.display = 'flex';
+}
+function hideError() { document.getElementById('errorFull').style.display = 'none'; }
 function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 </script>
 </body>
