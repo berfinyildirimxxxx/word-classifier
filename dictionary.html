@@ -191,9 +191,8 @@ var PAGE_SIZE = 10;
 
 // URL parametreleri
 var urlP = new URLSearchParams(window.location.search);
-var LANG = (urlP.get('lang') || 'TR').toUpperCase();
-var BATCH_NUM = parseInt(urlP.get('batch')) || 0;
-var BATCH_SIZE = parseInt(urlP.get('size')) || 5000;
+var TASK = (urlP.get('task') || '').toUpperCase();   // örn: "EN_005"
+var LANG = TASK ? TASK.split('_')[0] : '';            // örn: "EN"
 var PRE_WORKER = urlP.get('worker') || '';
 
 var workerId = '';
@@ -232,14 +231,14 @@ function startApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('mainApp').classList.add('active');
   document.getElementById('workerBadge').textContent = workerId;
-  document.getElementById('langBadge').textContent = LANG;
-  if (BATCH_NUM > 0) document.getElementById('batchBadge').textContent = 'Batch ' + BATCH_NUM;
+  document.getElementById('langBadge').textContent = LANG || '—';
+  document.getElementById('batchBadge').textContent = TASK || '—';
   loadAllWords();
 }
 (function() {
   var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian' };
   var name = langNames[LANG] || LANG;
-  document.getElementById('loginTitle').textContent = 'Word Classifier — ' + name;
+  document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
     document.getElementById('workerInput').value = PRE_WORKER;
   } else {
@@ -251,8 +250,8 @@ document.getElementById('workerInput').addEventListener('keydown', function(e) {
 // ── Tum kelimeleri yukle (tek seferde) ──
 function loadAllWords() {
   setLoading(true); hideError();
-  var params = { action: 'getWords', worker: workerId, lang: LANG };
-  if (BATCH_NUM > 0) { params.batch = BATCH_NUM; params.size = BATCH_SIZE; }
+  if (!TASK) { showError('Geçersiz link. Lütfen size verilen linki kullanın.'); return; }
+  var params = { action: 'getWords', worker: workerId, task: TASK };
 
   apiFetch(params)
   .then(function(data) {
@@ -389,7 +388,7 @@ function saveCurrentPage() {
     var item = q.shift();
     apiFetch({
       action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.harf_sayisi,
-      score: item.w.score, type: item.type, worker: workerId, lang: LANG
+      score: item.w.score, type: item.type, worker: workerId, task: TASK
     })
     .then(function() { savedSelections[item.idx] = item.type; next(); })
     .catch(function() { q.unshift(item); setTimeout(next, 1500); });
