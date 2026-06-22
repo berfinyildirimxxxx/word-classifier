@@ -293,19 +293,101 @@ var PAGE_SIZE = 10;
 
 // URL parametreleri
 var urlP = new URLSearchParams(window.location.search);
-var TASK = (urlP.get('task') || '').toUpperCase();   // örn: "EN_005"
-var LANG = TASK ? TASK.split('_')[0] : '';            // örn: "EN"
+var TASK = (urlP.get('task') || '').toUpperCase();
+var LANG = TASK ? TASK.split('_')[0] : '';
 var PRE_WORKER = urlP.get('worker') || '';
 
 var workerId = '';
-var allWords = [];      // tum kelimeler (sabit sira)
-var selections = {};    // {globalIndex: type}
-var savedSelections = {};  // sheete kaydedilmis olanlar (karsilastirma icin)
+var allWords = [];
+var selections = {};
+var savedSelections = {};
 var currentPage = 0;
 var totalPages = 0;
 var totalDone = 0;
 
-// ── Fetch ──
+// ═══════════════════════════════════════════════════════════════════
+// SAVE SİSTEMİ — Kilitli, sıralı, batch tabanlı
+// ═══════════════════════════════════════════════════════════════════
+var _savePromise = Promise.resolve();  // save zinciri
+var _savingNow = false;                // UI göstergesi için
+
+// Tüm saveleri sıraya koy — asla paralel çalışmaz
+function enqueueSave(pageIndex) {
+  // pageIndex verilmezse mevcut sayfa
+  if (pageIndex === undefined) pageIndex = currentPage;
+  _savePromise = _savePromise.then(function() {
+    return _doSavePage(pageIndex);
+  }).catch(function(err) {
+    console.error('Save error:', err);
+  });
+  return _savePromise;
+}
+
+// Asıl save — TEK bir API çağrısı ile batch gönderim
+function _doSavePage(pageIndex) {
+  var start = pageIndex * PAGE_SIZE;
+  var end = Math.min(start + PAGE_SIZE, allWords.length);
+  var toSave = [];
+
+  for (var i = start; i < end; i++) {
+    if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
+      toSave.push({ idx: i, kelime: allWords[i].kelime, harf_sayisi: allWords[i].kelime.length, type: selections[i] });
+    }
+  }
+  if (toSave.length === 0) return Promise.resolve();
+
+  _savingNow = true;
+  setSave('Saving...');
+
+  var payload = {
+    action: 'submitBatch',
+    task: TASK,
+    worker: workerId,
+    words: toSave.map(function(item) {
+      return { kelime: item.kelime, harf_sayisi: item.harf_sayisi, type: item.type };
+    })
+  };
+
+  return apiPost(payload).then(function(data) {
+    if (data.error) throw new Error(data.error);
+    // Başarılı — savedSelections güncelle
+    toSave.forEach(function(item) { savedSelections[item.idx] = item.type; });
+    _savingNow = false;
+    setSave('Saved ✓');
+    setTimeout(function() { if (!_savingNow) setSave(''); }, 2000);
+  }).catch(function(err) {
+    console.error('Batch save failed, falling back to sequential:', err);
+    // Fallback: tek tek gönder (eski yöntem, ama yine sıralı)
+    return _doSaveSequential(toSave);
+  });
+}
+
+// Fallback: batch çalışmazsa (eski GAS deploy'u) tek tek sıralı gönder
+function _doSaveSequential(items) {
+  var chain = Promise.resolve();
+  items.forEach(function(item) {
+    chain = chain.then(function() {
+      return apiFetch({
+        action: 'submit', kelime: item.kelime, harf_sayisi: item.harf_sayisi,
+        score: 0, type: item.type, worker: workerId, task: TASK
+      }).then(function(data) {
+        if (data && !data.error) savedSelections[item.idx] = item.type;
+      });
+    });
+  });
+  return chain.then(function() {
+    _savingNow = false;
+    setSave('Saved ✓');
+    setTimeout(function() { if (!_savingNow) setSave(''); }, 2000);
+  }).catch(function() {
+    _savingNow = false;
+    setSave('Save error — will retry');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// API çağrıları
+// ═══════════════════════════════════════════════════════════════════
 function apiFetch(params) {
   var url = new URL(API_URL);
   Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
@@ -316,7 +398,31 @@ function apiFetch(params) {
     .catch(function(err) { clearTimeout(timeout); if (err.name === 'AbortError') throw new Error('Timeout'); throw err; });
 }
 
-// ── Start ──
+function apiPost(body) {
+  var controller = new AbortController();
+  var timeout = setTimeout(function() { controller.abort(); }, 60000);
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },  // GAS doPost text/plain ile çalışır
+    body: JSON.stringify(body),
+    signal: controller.signal
+  })
+  .then(function(res) {
+    clearTimeout(timeout);
+    // GAS POST redirects ile çalışır, follow sonrası JSON döner
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .catch(function(err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Timeout');
+    throw err;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Start & Load
+// ═══════════════════════════════════════════════════════════════════
 function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
 
 function startApp() {
@@ -350,19 +456,16 @@ function startApp() {
 })();
 document.getElementById('workerInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') startApp(); });
 
-// ── Tum kelimeleri yukle (tek seferde) ──
 function loadAllWords() {
   setLoading(true); hideError();
   if (!TASK) { showError('Geçersiz link. Lütfen size verilen linki kullanın.'); return; }
-  var params = { action: 'getWords', worker: workerId, task: TASK };
 
-  apiFetch(params)
+  apiFetch({ action: 'getWords', worker: workerId, task: TASK })
   .then(function(data) {
     if (data.error) throw new Error(data.error);
     allWords = data.words;
     totalPages = Math.ceil(allWords.length / PAGE_SIZE);
 
-    // Mevcut siniflandirmalari yukle
     selections = {};
     savedSelections = {};
     totalDone = 0;
@@ -381,7 +484,6 @@ function loadAllWords() {
     if (allWords.length === 0) { showDone(); return; }
     currentPage = 0;
 
-    // Ilk yapilmamis sayfaya git
     for (var p = 0; p < totalPages; p++) {
       var start = p * PAGE_SIZE;
       var end = Math.min(start + PAGE_SIZE, allWords.length);
@@ -398,7 +500,9 @@ function loadAllWords() {
   .catch(function(err) { showError('Loading failed: ' + err.message); });
 }
 
-// ── Render ──
+// ═══════════════════════════════════════════════════════════════════
+// Render & Type Selection
+// ═══════════════════════════════════════════════════════════════════
 function renderPage() {
   var container = document.getElementById('wordCards');
   container.innerHTML = '';
@@ -430,7 +534,6 @@ function renderPage() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Type sec ──
 function selectType(i, type) {
   selections[i] = type;
   var card = document.getElementById('card-' + i);
@@ -439,24 +542,45 @@ function selectType(i, type) {
   btns.forEach(function(b) { b.classList.remove('active'); });
   btns[type - 1].classList.add('active');
 
-  // Daha once kaydedilmemisse done sayisini artir
   if (savedSelections[i] === undefined) {
     totalDone++;
     updateProgress();
   }
-
   updateNav();
 }
 
-// ── Nav ──
+// ═══════════════════════════════════════════════════════════════════
+// Navigation — save BİTMEDEN sayfa değişmez
+// ═══════════════════════════════════════════════════════════════════
+var _navigating = false;
+
 function goNext() {
-  saveCurrentPage();
-  if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+  if (_navigating) return;
+  _navigating = true;
+  setNavBusy(true);
+  enqueueSave(currentPage).then(function() {
+    if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+    _navigating = false;
+    setNavBusy(false);
+  });
 }
+
 function goBack() {
-  saveCurrentPage();
-  if (currentPage > 0) { currentPage--; renderPage(); }
+  if (_navigating) return;
+  _navigating = true;
+  setNavBusy(true);
+  enqueueSave(currentPage).then(function() {
+    if (currentPage > 0) { currentPage--; renderPage(); }
+    _navigating = false;
+    setNavBusy(false);
+  });
 }
+
+function setNavBusy(busy) {
+  document.getElementById('nextBtn').style.opacity = busy ? '0.5' : '';
+  document.getElementById('backBtn').style.opacity = busy ? '0.5' : '';
+}
+
 function updateNav() {
   document.getElementById('backBtn').disabled = (currentPage <= 0);
   var start = currentPage * PAGE_SIZE;
@@ -468,43 +592,42 @@ function updateNav() {
   document.getElementById('pageInfo').textContent = (currentPage + 1) + ' / ' + totalPages;
 }
 
-// ── Mevcut sayfadaki degisen kelimeleri kaydet ──
-function saveCurrentPage() {
+// ═══════════════════════════════════════════════════════════════════
+// Auto-save & beforeunload
+// ═══════════════════════════════════════════════════════════════════
+
+// Her 2 dakikada auto-save (kuyruklu, çakışmaz)
+setInterval(function() { enqueueSave(currentPage); }, 120000);
+
+// Sayfa kapanırken son kayıt denemesi
+window.addEventListener('beforeunload', function(e) {
+  // Kaydedilmemiş değişiklik var mı kontrol et
   var start = currentPage * PAGE_SIZE;
   var end = Math.min(start + PAGE_SIZE, allWords.length);
-  var toSave = [];
-
+  var unsaved = [];
   for (var i = start; i < end; i++) {
     if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
-      toSave.push({ idx: i, w: allWords[i], type: selections[i] });
+      unsaved.push({ kelime: allWords[i].kelime, harf_sayisi: allWords[i].kelime.length, type: selections[i] });
     }
   }
-  if (toSave.length === 0) return;
+  if (unsaved.length === 0) return;
 
-  setSave('Saving...');
-  var q = toSave.slice();
-  function next() {
-    if (q.length === 0) {
-      setSave('Saved ✓');
-      setTimeout(function() { setSave(''); }, 2000);
-      return;
-    }
-    var item = q.shift();
-    apiFetch({
-      action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.kelime.length,
-      score: item.w.score, type: item.type, worker: workerId, task: TASK
-    })
-    .then(function() { savedSelections[item.idx] = item.type; next(); })
-    .catch(function() { q.unshift(item); setTimeout(next, 1500); });
+  // sendBeacon ile senkron gönder (sayfa kapansa bile ulaşır)
+  var payload = JSON.stringify({
+    action: 'submitBatch', task: TASK, worker: workerId, words: unsaved
+  });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(API_URL, new Blob([payload], { type: 'text/plain' }));
   }
-  next();
-}
 
-// Sayfa kapanirken kaydet
-window.addEventListener('beforeunload', function() { saveCurrentPage(); });
-setInterval(saveCurrentPage, 120000);
+  // Kullanıcıya uyarı göster
+  e.preventDefault();
+  e.returnValue = 'Saving...';
+});
 
-// ── UI ──
+// ═══════════════════════════════════════════════════════════════════
+// UI Helpers
+// ═══════════════════════════════════════════════════════════════════
 function updateProgress() {
   var pct = allWords.length > 0 ? (totalDone / allWords.length * 100) : 0;
   document.getElementById('progressFill').style.width = pct + '%';
@@ -518,7 +641,7 @@ function setLoading(s) {
   document.getElementById('navButtons').style.display = s ? 'none' : 'flex';
   document.getElementById('doneScreen').style.display = 'none';
 }
-function showDone() { setLoading(false); document.getElementById('wordCards').style.display = 'none'; document.getElementById('navButtons').style.display = 'none'; document.getElementById('doneScreen').style.display = 'block'; saveCurrentPage(); }
+function showDone() { setLoading(false); document.getElementById('wordCards').style.display = 'none'; document.getElementById('navButtons').style.display = 'none'; document.getElementById('doneScreen').style.display = 'block'; enqueueSave(currentPage); }
 function showError(m) {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('wordCards').style.display = 'none';
