@@ -205,6 +205,12 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// CODE VERSION — değişiklik yapıldığında artır (cache-busting)
+// ═══════════════════════════════════════════════════════════════════
+var CODE_VERSION = 3;
+console.log('[WordClassifier] v' + CODE_VERSION + ' loaded');
+
 var DESCRIPTIONS = {
   TR: {
     label: 'Type Açıklamaları',
@@ -288,7 +294,10 @@ var DESCRIPTIONS = {
   }
 };
 
-var API_URL = 'https://script.google.com/a/macros/agave.games/s/AKfycbyxp8LzVlzaq_KlJIhGeyq5H0Hlxh89MAd6Ho5E3QOfUarNST2FW04ucaZAo3RIsYVxrg/exec';
+// ═══════════════════════════════════════════════════════════════════
+// !! API_URL'İ BURAYA YAZ — GAS deploy sonrası aldığın URL !!
+// ═══════════════════════════════════════════════════════════════════
+var API_URL = 'https://script.google.com/macros/s/AKfycbz8-vhQr85mR5_W2U8h3me7nvYgcaR1qq4fiQumyTnRg9Y-u-d--saWnHygb7RudV_Cdw/exec';
 var PAGE_SIZE = 10;
 
 // URL parametreleri
@@ -306,24 +315,36 @@ var totalPages = 0;
 var totalDone = 0;
 
 // ═══════════════════════════════════════════════════════════════════
-// SAVE SİSTEMİ — Kilitli, sıralı, batch tabanlı
+// API — SADECE GET (GAS 302 redirect POST'u bozuyor)
 // ═══════════════════════════════════════════════════════════════════
-var _savePromise = Promise.resolve();  // save zinciri
-var _savingNow = false;                // UI göstergesi için
+function apiFetch(params) {
+  var url = new URL(API_URL);
+  Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
+  var controller = new AbortController();
+  var timeout = setTimeout(function() { controller.abort(); }, 60000);
+  return fetch(url.toString(), { signal: controller.signal })
+    .then(function(res) { clearTimeout(timeout); if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+    .catch(function(err) { clearTimeout(timeout); if (err.name === 'AbortError') throw new Error('Timeout'); throw err; });
+}
 
-// Tüm saveleri sıraya koy — asla paralel çalışmaz
+// ═══════════════════════════════════════════════════════════════════
+// SAVE SİSTEMİ — Promise zinciri, asla paralel çalışmaz
+// ═══════════════════════════════════════════════════════════════════
+var _savePromise = Promise.resolve();
+var _savingNow = false;
+
+// Her save sıraya eklenir — önceki bitmeden sonraki başlamaz
 function enqueueSave(pageIndex) {
-  // pageIndex verilmezse mevcut sayfa
   if (pageIndex === undefined) pageIndex = currentPage;
   _savePromise = _savePromise.then(function() {
     return _doSavePage(pageIndex);
   }).catch(function(err) {
-    console.error('Save error:', err);
+    console.error('[Save] queue error:', err);
   });
   return _savePromise;
 }
 
-// Asıl save — TEK bir API çağrısı ile batch gönderim
+// Batch save — TEK GET isteği ile 10 kelimeyi gönder
 function _doSavePage(pageIndex) {
   var start = pageIndex * PAGE_SIZE;
   var end = Math.min(start + PAGE_SIZE, allWords.length);
@@ -339,30 +360,29 @@ function _doSavePage(pageIndex) {
   _savingNow = true;
   setSave('Saving...');
 
-  var payload = {
+  // Batch verisini JSON olarak GET parametresine koy
+  var wordsJson = JSON.stringify(toSave.map(function(item) {
+    return { kelime: item.kelime, harf_sayisi: item.harf_sayisi, type: item.type };
+  }));
+
+  return apiFetch({
     action: 'submitBatch',
     task: TASK,
     worker: workerId,
-    words: toSave.map(function(item) {
-      return { kelime: item.kelime, harf_sayisi: item.harf_sayisi, type: item.type };
-    })
-  };
-
-  return apiPost(payload).then(function(data) {
+    words: wordsJson
+  }).then(function(data) {
     if (data.error) throw new Error(data.error);
-    // Başarılı — savedSelections güncelle
     toSave.forEach(function(item) { savedSelections[item.idx] = item.type; });
     _savingNow = false;
     setSave('Saved ✓');
     setTimeout(function() { if (!_savingNow) setSave(''); }, 2000);
   }).catch(function(err) {
-    console.error('Batch save failed, falling back to sequential:', err);
-    // Fallback: tek tek gönder (eski yöntem, ama yine sıralı)
+    console.warn('[Save] Batch failed, falling back to sequential:', err.message);
     return _doSaveSequential(toSave);
   });
 }
 
-// Fallback: batch çalışmazsa (eski GAS deploy'u) tek tek sıralı gönder
+// Fallback: batch çalışmazsa tek tek sıralı gönder (yine Promise zinciri)
 function _doSaveSequential(items) {
   var chain = Promise.resolve();
   items.forEach(function(item) {
@@ -381,42 +401,7 @@ function _doSaveSequential(items) {
     setTimeout(function() { if (!_savingNow) setSave(''); }, 2000);
   }).catch(function() {
     _savingNow = false;
-    setSave('Save error — will retry');
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// API çağrıları
-// ═══════════════════════════════════════════════════════════════════
-function apiFetch(params) {
-  var url = new URL(API_URL);
-  Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
-  var controller = new AbortController();
-  var timeout = setTimeout(function() { controller.abort(); }, 60000);
-  return fetch(url.toString(), { signal: controller.signal })
-    .then(function(res) { clearTimeout(timeout); if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
-    .catch(function(err) { clearTimeout(timeout); if (err.name === 'AbortError') throw new Error('Timeout'); throw err; });
-}
-
-function apiPost(body) {
-  var controller = new AbortController();
-  var timeout = setTimeout(function() { controller.abort(); }, 60000);
-  return fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },  // GAS doPost text/plain ile çalışır
-    body: JSON.stringify(body),
-    signal: controller.signal
-  })
-  .then(function(res) {
-    clearTimeout(timeout);
-    // GAS POST redirects ile çalışır, follow sonrası JSON döner
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
-  })
-  .catch(function(err) {
-    clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Timeout');
-    throw err;
+    setSave('Save error');
   });
 }
 
@@ -484,11 +469,12 @@ function loadAllWords() {
     if (allWords.length === 0) { showDone(); return; }
     currentPage = 0;
 
+    // İlk tamamlanmamış sayfaya git
     for (var p = 0; p < totalPages; p++) {
-      var start = p * PAGE_SIZE;
-      var end = Math.min(start + PAGE_SIZE, allWords.length);
+      var s = p * PAGE_SIZE;
+      var e = Math.min(s + PAGE_SIZE, allWords.length);
       var allPageDone = true;
-      for (var j = start; j < end; j++) {
+      for (var j = s; j < e; j++) {
         if (selections[j] === undefined) { allPageDone = false; break; }
       }
       if (!allPageDone) { currentPage = p; break; }
@@ -550,7 +536,7 @@ function selectType(i, type) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Navigation — save BİTMEDEN sayfa değişmez
+// Navigation — save BİTMEDEN sayfa DEĞİŞMEZ
 // ═══════════════════════════════════════════════════════════════════
 var _navigating = false;
 
@@ -595,13 +581,9 @@ function updateNav() {
 // ═══════════════════════════════════════════════════════════════════
 // Auto-save & beforeunload
 // ═══════════════════════════════════════════════════════════════════
-
-// Her 2 dakikada auto-save (kuyruklu, çakışmaz)
 setInterval(function() { enqueueSave(currentPage); }, 120000);
 
-// Sayfa kapanırken son kayıt denemesi
 window.addEventListener('beforeunload', function(e) {
-  // Kaydedilmemiş değişiklik var mı kontrol et
   var start = currentPage * PAGE_SIZE;
   var end = Math.min(start + PAGE_SIZE, allWords.length);
   var unsaved = [];
@@ -612,15 +594,14 @@ window.addEventListener('beforeunload', function(e) {
   }
   if (unsaved.length === 0) return;
 
-  // sendBeacon ile senkron gönder (sayfa kapansa bile ulaşır)
-  var payload = JSON.stringify({
-    action: 'submitBatch', task: TASK, worker: workerId, words: unsaved
-  });
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(API_URL, new Blob([payload], { type: 'text/plain' }));
-  }
+  // GET + keepalive — GAS redirect ile uyumlu, sayfa kapansa da tamamlanır
+  var url = new URL(API_URL);
+  url.searchParams.set('action', 'submitBatch');
+  url.searchParams.set('task', TASK);
+  url.searchParams.set('worker', workerId);
+  url.searchParams.set('words', JSON.stringify(unsaved));
+  try { fetch(url.toString(), { keepalive: true }); } catch(ex) {}
 
-  // Kullanıcıya uyarı göster
   e.preventDefault();
   e.returnValue = 'Saving...';
 });
