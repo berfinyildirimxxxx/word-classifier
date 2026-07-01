@@ -205,6 +205,9 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
+var CODE_VERSION = 4;
+console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
+
 var DESCRIPTIONS = {
   TR: {
     label: 'Type Açıklamaları',
@@ -346,6 +349,7 @@ var workerId = '';
 var allWords = [];      // tum kelimeler (sabit sira)
 var selections = {};    // {globalIndex: type}
 var savedSelections = {};  // sheete kaydedilmis olanlar (karsilastirma icin)
+var countedDone = {};   // {globalIndex: true} - progress sayacina dahil edilmis mi (save durumundan BAGIMSIZ)
 var currentPage = 0;
 var totalPages = 0;
 var totalDone = 0;
@@ -410,6 +414,7 @@ function loadAllWords() {
     // Mevcut siniflandirmalari yukle
     selections = {};
     savedSelections = {};
+    countedDone = {};
     totalDone = 0;
     allWords.forEach(function(w, i) {
       if (w.type) {
@@ -417,6 +422,7 @@ function loadAllWords() {
         if (t >= 1 && t <= 4) {
           selections[i] = t;
           savedSelections[i] = t;
+          countedDone[i] = true;
           totalDone++;
         }
       }
@@ -484,8 +490,14 @@ function selectType(i, type) {
   btns.forEach(function(b) { b.classList.remove('active'); });
   btns[type - 1].classList.add('active');
 
-  // Daha once kaydedilmemisse done sayisini artir
-  if (savedSelections[i] === undefined) {
+  // BUG FIX (v4): sayaç artık save durumuna değil, "bu kelime en az bir kez
+  // seçildi mi" bilgisine bakıyor. Böylece bir kelimenin type'ı save
+  // tamamlanmadan önce birden fazla kez değiştirilse bile totalDone sadece
+  // BİR KEZ artıyor. Eskiden savedSelections[i] === undefined kontrolü
+  // kullanılıyordu; save asenkron/kuyruklu olduğu için aynı kelime tekrar
+  // tekrar sayılabiliyor ve yüzde %100'ü geçebiliyordu.
+  if (!countedDone[i]) {
+    countedDone[i] = true;
     totalDone++;
     updateProgress();
   }
