@@ -205,10 +205,30 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 6;
+var CODE_VERSION = 7;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v7 DEĞİŞİKLİK LOGU:
+
+  1) KRİTİK DÜZELTME — API_URL güncellendi:
+     Deployment yeniden oluşturulmuş (Manage Deployments > Edit yerine
+     yanlışlıkla yeni bir deployment yaratılmış), bu da deployment ID'sinin
+     ve dolayısıyla /exec URL'sinin değişmesine yol açmıştı. Eski URL hâlâ
+     v3 (submitBatch'siz) koda gidiyordu, bu yüzden her submitBatch isteği
+     "{"error":"Unknown action: submitBatch"}" ile geri dönüyor, frontend
+     bunu retry döngüsüne sokuyor ve HİÇBİR kelime kaydedilmiyordu — worker
+     kapatıp geri girdiğinde bu yüzden baştan başlıyordu.
+     Yeni deployment ID ile URL güncellendi:
+     https://script.google.com/macros/s/AKfycbz8-vhQr85mR5_W2U8h3me7nvYgcaR1qq4fiQumyTnRg9Y-u-d--saWnHygb7RudV_Cdw/exec
+
+  ÖNEMLİ: Bundan sonra kodda değişiklik yaparsanız YENİ bir deployment
+  OLUŞTURMAYIN. Apps Script'te Deploy > Manage Deployments > (mevcut
+  deployment'ın yanındaki kalem ikonu) > Version: New Version > Deploy
+  yapın. Bu, aynı deployment ID'yi (ve dolayısıyla aynı /exec URL'sini)
+  koruyarak sadece kodu günceller. Yeni deployment oluşturmak yeni bir URL
+  üretir ve bu dosyadaki API_URL ile senkron kalmaz.
+
   v6 DEĞİŞİKLİK LOGU (concurrency / veri bütünlüğü düzeltmeleri):
 
   1) DUPLICATE KAYIT KÖK NEDENİ DÜZELTİLDİ:
@@ -243,11 +263,6 @@ console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
   5) Otomatik kayıt aralığı 120sn'den 30sn'ye düşürüldü — artık çakışma
      koruması olduğu için daha sık kayıt almak güvenli ve veri kaybı
      penceresini küçültüyor.
-
-  NOT: submitBatch'in backend tarafında da bir düzeltme var — aynı batch
-  içinde (sözlükteki ~220 tekrarlı kelimeden biri aynı sayfaya denk gelirse)
-  aynı kelimenin iki kez "yeni satır" olarak eklenmesini önleyen bir kontrol
-  eklendi. Güncel gas_code.js'i de deploy etmeniz gerekiyor.
 */
 
 var DESCRIPTIONS = {
@@ -378,7 +393,7 @@ var DESCRIPTIONS = {
   }
 };
 
-var API_URL = 'https://script.google.com/macros/s/AKfycbzoWQ5WZvXOzKQXDhOcAcRcophfZ5RoOLZdeQFzLTskL0uEO3ckga6dIVDsrPhO0xqWhQ/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbz8-vhQr85mR5_W2U8h3me7nvYgcaR1qq4fiQumyTnRg9Y-u-d--saWnHygb7RudV_Cdw/exec';
 var PAGE_SIZE = 10;
 var AUTOSAVE_INTERVAL_MS = 30000; // 30 saniye (eskiden 120000 idi; artık guard olduğu için sık kayıt güvenli)
 
