@@ -205,8 +205,50 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 4;
+var CODE_VERSION = 6;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
+
+/*
+  v6 DEĞİŞİKLİK LOGU (concurrency / veri bütünlüğü düzeltmeleri):
+
+  1) DUPLICATE KAYIT KÖK NEDENİ DÜZELTİLDİ:
+     Eskiden setInterval(saveCurrentPage, 120000) ile goNext()/goBack()'in
+     tetiklediği save çağrıları HİÇBİR koruma olmadan aynı anda çalışabiliyordu.
+     İkisi de savedSelections henüz güncellenmemiş aynı kelimeyi görüp bağımsız
+     birer istek gönderiyor, bu da results sheet'inde aynı worker+task+kelime
+     için iki satır oluşmasına yol açıyordu (RU_Results CSV analizinde 41 örnek
+     bulundu). Şimdi tek bir global isSavingInProgress bayrağı var: bir save
+     devam ederken yeni bir save başlatılmıyor, bunun yerine "saveAgainNeeded"
+     işaretleniyor ve mevcut save bitince otomatik tekrar tetikleniyor. Böylece
+     hem çakışma hem de veri kaybı riski ortadan kalkıyor (sonradan gelen
+     değişiklikler kaybolmuyor, sadece kuyruğa alınıyor).
+
+  2) TEK TEK GET SUBMIT YERİNE submitBatch KULLANILIYOR:
+     Backend'de zaten var olan (kilitli, atomik) submitBatch endpoint'i
+     kullanılmaya başlandı. Bir sayfadaki tüm değişen kelimeler TEK bir
+     istekte gönderiliyor. Bu hem daha hızlı hem de çakışma penceresini
+     (kaç ayrı GAS execution'ın aynı anda kilit için beklediği süre) büyük
+     ölçüde azaltıyor.
+
+  3) SESSİZ HATA YUTMA DÜZELTİLDİ:
+     Sunucu {error: ...} dönerse (ör. kilit zaman aşımı) artık "kaydedildi"
+     sanılmıyor; otomatik olarak tekrar deneniyor.
+
+  4) beforeunload / pagehide İÇİN keepalive fetch:
+     Sekme kapanırken gönderilen son kayıt artık fetch(..., {keepalive:true})
+     ile yapılıyor, böylece tarayıcı isteği sayfa kapansa bile tamamlamaya
+     çalışıyor (öncesinde bu hiç yoktu, normal fetch sayfa kapanınca iptal
+     olabiliyordu).
+
+  5) Otomatik kayıt aralığı 120sn'den 30sn'ye düşürüldü — artık çakışma
+     koruması olduğu için daha sık kayıt almak güvenli ve veri kaybı
+     penceresini küçültüyor.
+
+  NOT: submitBatch'in backend tarafında da bir düzeltme var — aynı batch
+  içinde (sözlükteki ~220 tekrarlı kelimeden biri aynı sayfaya denk gelirse)
+  aynı kelimenin iki kez "yeni satır" olarak eklenmesini önleyen bir kontrol
+  eklendi. Güncel gas_code.js'i de deploy etmeniz gerekiyor.
+*/
 
 var DESCRIPTIONS = {
   TR: {
@@ -338,6 +380,7 @@ var DESCRIPTIONS = {
 
 var API_URL = 'https://script.google.com/macros/s/AKfycbzoWQ5WZvXOzKQXDhOcAcRcophfZ5RoOLZdeQFzLTskL0uEO3ckga6dIVDsrPhO0xqWhQ/exec';
 var PAGE_SIZE = 10;
+var AUTOSAVE_INTERVAL_MS = 30000; // 30 saniye (eskiden 120000 idi; artık guard olduğu için sık kayıt güvenli)
 
 // URL parametreleri
 var urlP = new URLSearchParams(window.location.search);
@@ -353,6 +396,10 @@ var countedDone = {};   // {globalIndex: true} - progress sayacina dahil edilmis
 var currentPage = 0;
 var totalPages = 0;
 var totalDone = 0;
+
+// Save concurrency guard (bkz. v6 değişiklik logu #1)
+var isSavingInProgress = false;
+var saveAgainNeeded = false;
 
 // ── Fetch ──
 function apiFetch(params) {
@@ -490,12 +537,7 @@ function selectType(i, type) {
   btns.forEach(function(b) { b.classList.remove('active'); });
   btns[type - 1].classList.add('active');
 
-  // BUG FIX (v4): sayaç artık save durumuna değil, "bu kelime en az bir kez
-  // seçildi mi" bilgisine bakıyor. Böylece bir kelimenin type'ı save
-  // tamamlanmadan önce birden fazla kez değiştirilse bile totalDone sadece
-  // BİR KEZ artıyor. Eskiden savedSelections[i] === undefined kontrolü
-  // kullanılıyordu; save asenkron/kuyruklu olduğu için aynı kelime tekrar
-  // tekrar sayılabiliyor ve yüzde %100'ü geçebiliyordu.
+  // Sayaç, save durumundan bağımsız: bu kelime en az bir kez seçildi mi diye bakıyor.
   if (!countedDone[i]) {
     countedDone[i] = true;
     totalDone++;
@@ -507,11 +549,11 @@ function selectType(i, type) {
 
 // ── Nav ──
 function goNext() {
-  saveCurrentPage();
+  saveProgress();
   if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
 }
 function goBack() {
-  saveCurrentPage();
+  saveProgress();
   if (currentPage > 0) { currentPage--; renderPage(); }
 }
 function updateNav() {
@@ -525,41 +567,79 @@ function updateNav() {
   document.getElementById('pageInfo').textContent = (currentPage + 1) + ' / ' + totalPages;
 }
 
-// ── Mevcut sayfadaki degisen kelimeleri kaydet ──
-function saveCurrentPage() {
-  var start = currentPage * PAGE_SIZE;
-  var end = Math.min(start + PAGE_SIZE, allWords.length);
-  var toSave = [];
+// ── Bekleyen TÜM değişiklikleri (sadece mevcut sayfa değil, tüm allWords)
+//    kaydet — batch olarak, TEK istekte, çakışmaya karşı korumalı ──────────
+function saveProgress() {
+  if (isSavingInProgress) {
+    // Zaten bir save devam ediyor: yeni bir istek AÇMA, mevcut save bitince
+    // tekrar tetiklenmesi için işaretle. Bu sayede hem duplicate kayıt riski
+    // ortadan kalkıyor, hem de bu sırada yapılan yeni seçimler kaybolmuyor.
+    saveAgainNeeded = true;
+    return;
+  }
 
-  for (var i = start; i < end; i++) {
+  var toSave = [];
+  for (var i = 0; i < allWords.length; i++) {
     if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
       toSave.push({ idx: i, w: allWords[i], type: selections[i] });
     }
   }
   if (toSave.length === 0) return;
 
+  isSavingInProgress = true;
+  saveAgainNeeded = false;
   setSave('Saving...');
-  var q = toSave.slice();
-  function next() {
-    if (q.length === 0) {
-      setSave('Saved ✓');
-      setTimeout(function() { setSave(''); }, 2000);
-      return;
-    }
-    var item = q.shift();
-    apiFetch({
-      action: 'submit', kelime: item.w.kelime, harf_sayisi: item.w.kelime.length,
-      score: item.w.score, type: item.type, worker: workerId, task: TASK
-    })
-    .then(function() { savedSelections[item.idx] = item.type; next(); })
-    .catch(function() { q.unshift(item); setTimeout(next, 1500); });
-  }
-  next();
+
+  var payload = toSave.map(function(item) {
+    return { kelime: item.w.kelime, harf_sayisi: item.w.kelime.length, type: item.type };
+  });
+
+  apiFetch({
+    action: 'submitBatch',
+    worker: workerId,
+    task: TASK,
+    words: JSON.stringify(payload)
+  })
+  .then(function(data) {
+    if (data && data.error) throw new Error(data.error); // sunucu hata dönerse basarili sayma
+    toSave.forEach(function(item) { savedSelections[item.idx] = item.type; });
+    isSavingInProgress = false;
+    setSave('Saved ✓');
+    setTimeout(function() { setSave(''); }, 2000);
+    if (saveAgainNeeded) { saveAgainNeeded = false; saveProgress(); }
+  })
+  .catch(function() {
+    isSavingInProgress = false;
+    setSave('Retrying...');
+    setTimeout(function() { setSave(''); }, 1500);
+    setTimeout(saveProgress, 1500); // basarisiz oldu, kisa sure sonra tekrar dene
+  });
 }
 
-// Sayfa kapanirken kaydet
-window.addEventListener('beforeunload', function() { saveCurrentPage(); });
-setInterval(saveCurrentPage, 120000);
+// ── Sayfa/sekme kapanirken en son hali göndermeyi dene (best-effort) ──────
+// keepalive:true ile — sekme kapansa bile tarayıcı isteği tamamlamaya çalışır.
+// Önceden bu hiç yoktu; normal fetch sayfa kapanınca iptal olabiliyordu.
+function sendKeepaliveSave() {
+  var toSave = [];
+  for (var i = 0; i < allWords.length; i++) {
+    if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
+      toSave.push({ kelime: allWords[i].kelime, harf_sayisi: allWords[i].kelime.length, type: selections[i] });
+    }
+  }
+  if (toSave.length === 0) return;
+  try {
+    var url = new URL(API_URL);
+    url.searchParams.set('action', 'submitBatch');
+    url.searchParams.set('worker', workerId);
+    url.searchParams.set('task', TASK);
+    url.searchParams.set('words', JSON.stringify(toSave));
+    fetch(url.toString(), { keepalive: true });
+  } catch (e) { /* sessizce yut, bu zaten best-effort bir son deneme */ }
+}
+window.addEventListener('beforeunload', sendKeepaliveSave);
+window.addEventListener('pagehide', sendKeepaliveSave); // bazi tarayicilar/mobil beforeunload tetiklemeyebilir
+
+setInterval(saveProgress, AUTOSAVE_INTERVAL_MS);
 
 // ── UI ──
 function updateProgress() {
@@ -575,7 +655,7 @@ function setLoading(s) {
   document.getElementById('navButtons').style.display = s ? 'none' : 'flex';
   document.getElementById('doneScreen').style.display = 'none';
 }
-function showDone() { setLoading(false); document.getElementById('wordCards').style.display = 'none'; document.getElementById('navButtons').style.display = 'none'; document.getElementById('doneScreen').style.display = 'block'; saveCurrentPage(); }
+function showDone() { setLoading(false); document.getElementById('wordCards').style.display = 'none'; document.getElementById('navButtons').style.display = 'none'; document.getElementById('doneScreen').style.display = 'block'; saveProgress(); }
 function showError(m) {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('wordCards').style.display = 'none';
