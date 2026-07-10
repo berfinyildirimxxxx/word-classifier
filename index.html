@@ -390,6 +390,40 @@ var DESCRIPTIONS = {
           '⚠️ НЕ Тип 4: инфинитивы (читать → Тип 3), наречия (быстро → Тип 3), алкоголь (водка → Тип 3)'
         ], kisacasi: 'Всем известные, из повседневной жизни, бесспорно общеупотребительные русские слова.' }
     ]
+  },
+  ES: {
+    label: 'Descripciones de tipo',
+    types: [
+      { title: 'Tipo 1 — No utilizable en el juego', bullets: [
+          'Palabras donde predomina el carácter de nombre propio (ej. Ana, Aznar, Aristóteles — pero se excluyen de esta regla si el significado de diccionario es al menos tan dominante como el de nombre propio: Marino, León)',
+          'Nombres de empresas, marcas o siglas (ej. Microsoft, Linux, PSOE, OTAN)',
+          'Nombres de drogas o sustancias ilegales (ej. LSD) — las bebidas alcohólicas son una excepción en este proyecto, se evalúan con las reglas normales',
+          'Groserías, jerga vulgar, expresiones sexuales u obscenas',
+          'Cadenas inventadas que no son ni una palabra real ni un nombre'
+        ], kisacasi: 'O no es estructuralmente adecuada (demasiado corta/larga, nombre propio), o su contenido es problemático, o no es una palabra real.' },
+      { title: 'Tipo 2 — Válida pero no apta para el juego', bullets: [
+          'Nombres de lugares (ciudades, países, regiones) — sean o no conocidos; en el proyecto en español los topónimos nunca son Tipo 1 (ej. Alemania, Alcalá)',
+          'Formas flexionadas: plurales, forma femenina de adjetivos, formas verbales no infinitivas (ej. Nieves, Palacios, Antigua)',
+          'Palabras reales que el hablante promedio probablemente no conoce en absoluto (ej. Marfil, Alcor)',
+          'Palabras de interés muy específico o reducido (ej. estetoscopio)',
+          'Artículos determinados las/los',
+          'Aunque todavía no haya salido un ejemplo, también entran aquí por definición: términos técnicos, términos religiosos, términos académicos, términos médicos, conceptos levemente negativos'
+        ], kisacasi: 'La palabra es real y tiene significado, pero es un nombre propio, una forma flexionada, o demasiado específica/rara para que el jugador promedio la reconozca.' },
+      { title: 'Tipo 3 — Palabra jugable', bullets: [
+          'Palabras que el hablante promedio de español reconocería sin contexto',
+          'Solo es válida la forma base o de diccionario: singular en los sustantivos, masculino singular en los adjetivos, infinitivo en los verbos',
+          'Objetos concretos (ej. isla, mar, acuario)',
+          'Adjetivos comunes (ej. marino)',
+          'Conceptos comunes, abstractos o concretos (ej. monte, laguna)',
+          'Los usos formales, literarios, anticuados o figurados se quedan aquí (ej. el sentido de "odisea" como largo periplo/sufrimiento — se reconoce, pero no se usa en el habla cotidiana)'
+        ], kisacasi: 'Todos la conocen, todos la entienden — pero no es tan cotidiana/común como las de Tipo 4.' },
+      { title: 'Tipo 4 — Palabra núcleo', bullets: [
+          'Palabras que realmente podemos usar en el juego, conocidas por todos',
+          '¿La reconocería de inmediato una persona cualquiera, sin importar su edad o nivel educativo? Si la respuesta es sí, es Tipo 4',
+          'Las mejores palabras de Tipo 3 se convierten en Tipo 4',
+          'La longitud no es un problema (ej. ciudad, mensaje, ordenador, jersey también pueden ser Tipo 4)'
+        ], kisacasi: 'Palabras que se pueden usar en el juego, conocidas por todos — sean generosos, no es una lista reducida.' }
+    ]
   }
 };
 
@@ -449,7 +483,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
