@@ -7,13 +7,21 @@ var RESULTS = {
 };
 
 // ─── GET router ───────────────────────────────────────────────────
+// Not: Frontend (index.html) CORS nedeniyle her şeyi GET ile çağırır;
+// submitBatch de query param olarak gelir (words = JSON string).
 function doGet(e) {
   var p = e.parameter;
   var result;
   try {
-    if      (p.action === 'getWords') result = getWords(p.task || '', p.worker || '');
-    else if (p.action === 'submit')   result = submitWord(p);
-    else                              result = { error: 'Unknown action: ' + p.action };
+    if      (p.action === 'getWords')    result = getWords(p.task || '', p.worker || '');
+    else if (p.action === 'submit')      result = submitWord(p);
+    else if (p.action === 'submitBatch') result = submitBatch({
+      action: 'submitBatch',
+      task:   p.task,
+      worker: p.worker,
+      words:  JSON.parse(p.words || '[]')
+    });
+    else                                 result = { error: 'Unknown action: ' + p.action };
   } catch (ex) {
     result = { error: ex.message };
   }
