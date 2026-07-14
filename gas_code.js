@@ -3,7 +3,8 @@ var DICT_ID = '1Np2b7Im5q55kXHRhPc3euvlPGiZ_7anTfvYSly1hvHQ';  // FTW Dictionari
 var RESULTS = {
   'TR': '1B5F24YxM3aOedWoiB7oJ1xcO2MucRcLmwdG0pFODCGQ',         // FTW Results TR
   'EN': '1lg-u01ymZZB0nK0GOnYFt3cq6tZ39Z1LL36bKsMCM18',         // FTW Results EN
-  'RU': '139sob08OmOENQfvJyXYIRbgzmlUVwzrGMl9sMBfXocA'          // FTW Results RU
+  'RU': '139sob08OmOENQfvJyXYIRbgzmlUVwzrGMl9sMBfXocA',         // FTW Results RU
+  'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE'          // FTW Results ES
 };
 
 // ─── GET router ───────────────────────────────────────────────────
