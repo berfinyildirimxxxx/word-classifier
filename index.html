@@ -205,10 +205,43 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 7;
+var CODE_VERSION = 8;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v8 DEĞİŞİKLİK LOGU:
+
+  1) ES (İspanyolca) desteği geri eklendi (RESULTS.ES, langNames.ES,
+     DESCRIPTIONS.ES) — v7'de yanlışlıkla kaldırılmıştı.
+
+  2) HIZLI ÇİFT TIKLAMADA SAYFA ATLAMA DÜZELTİLDİ:
+     goNext()/goBack() senkron olarak currentPage'i artırıp/azaltıyordu ve
+     saveProgress()'in isSavingInProgress guard'ı bunu engellemiyordu (o
+     guard sadece network isteğini tekilleştiriyor, sayfa geçişini değil).
+     Hızlı çift tıklama veya çift Enter, arada bir sayfayı (10 kelime) hiç
+     göstermeden atlayabiliyordu. 400ms'lik bir debounce eklendi.
+
+  3) BACKEND: SpreadsheetApp.flush() eklendi (gas_code.js, submitWord/
+     submitBatch) — flush olmadan lock.releaseLock() çağrıldığında bir
+     sonraki execution bu execution'ın yazdıklarını stale (eski) görebiliyordu.
+     İki worker aynı task'ta aynı anda kayıt gönderirse bu, ikincinin
+     "lastRow"u eski okuyup birincinin satırlarının üzerine yazmasına (veri
+     kaybı) yol açabilirdi.
+
+  4) BACKEND: AYNI KELİMENİN TASK İÇİNDE TEKRAR ETMESİ DÜZELTİLDİ:
+     Eşleştirme sadece 'kelime' metnine bakıyordu; bir task içinde aynı
+     kelime iki kez geçiyorsa, birini işaretlemek diğerini de otomatik aynı
+     tipe çeviriyor ve ikisi aynı satıra yazılıyordu. Artık birincil anahtar
+     dictionary'deki satır no ('row') — her occurrence artık ayrı satıra
+     kaydediliyor. Results sheet'lerine yeni bir 'row' kolonu eklendi (mevcut
+     veriye dokunulmadan); 'row' bilgisi olmayan eski kayıtlar geriye dönük
+     uyumluluk için kelimeyle eşleştirilip ilk fırsatta 'row' bilgisiyle
+     tamamlanıyor (self-heal).
+
+     NOT: (3) ve (4) gas_code.js'de, yani Apps Script tarafında. Bu ikisinin
+     etkili olması için Apps Script projesine kod yapıştırılıp yeniden deploy
+     edilmesi gerekiyor.
+
   v7 DEĞİŞİKLİK LOGU:
 
   1) KRİTİK DÜZELTME — API_URL güncellendi:
@@ -395,34 +428,34 @@ var DESCRIPTIONS = {
     label: 'Descripciones de tipo',
     types: [
       { title: 'Tipo 1 — No utilizable en el juego', bullets: [
-          'Palabras donde predomina el carácter de nombre propio (ej. Ana, Aznar, Aristóteles — pero se excluyen de esta regla si el significado de diccionario es al menos tan dominante como el de nombre propio: Marino, León)',
+          'Palabras en las que predomina el carácter de nombre propio (ej. Ana, Aznar, Aristóteles). Sin embargo, esta regla no se aplica cuando el significado de diccionario es igual o más dominante que el uso como nombre propio: Marino, León',
           'Nombres de empresas, marcas o siglas (ej. Microsoft, Linux, PSOE, OTAN)',
-          'Nombres de drogas o sustancias ilegales (ej. LSD) — las bebidas alcohólicas son una excepción en este proyecto, se evalúan con las reglas normales',
-          'Groserías, jerga vulgar, expresiones sexuales u obscenas',
+          'Nombres de drogas o sustancias ilegales (ej. LSD). Las bebidas alcohólicas son una excepción en este proyecto y se evalúan según las reglas normales.',
+          'Groserías, jerga vulgar y expresiones sexuales u obscenas',
           'Cadenas inventadas que no son ni una palabra real ni un nombre'
-        ], kisacasi: 'O no es estructuralmente adecuada (demasiado corta/larga, nombre propio), o su contenido es problemático, o no es una palabra real.' },
-      { title: 'Tipo 2 — Válida pero no apta para el juego', bullets: [
-          'Nombres de lugares (ciudades, países, regiones) — sean o no conocidos; en el proyecto en español los topónimos nunca son Tipo 1 (ej. Alemania, Alcalá)',
-          'Formas flexionadas: plurales, forma femenina de adjetivos, formas verbales no infinitivas (ej. Nieves, Palacios, Antigua)',
-          'Palabras reales que el hablante promedio probablemente no conoce en absoluto (ej. Marfil, Alcor)',
-          'Palabras de interés muy específico o reducido (ej. estetoscopio)',
-          'Artículos determinados las/los',
-          'Aunque todavía no haya salido un ejemplo, también entran aquí por definición: términos técnicos, términos religiosos, términos académicos, términos médicos, conceptos levemente negativos'
-        ], kisacasi: 'La palabra es real y tiene significado, pero es un nombre propio, una forma flexionada, o demasiado específica/rara para que el jugador promedio la reconozca.' },
+        ], kisacasi: 'O no es estructuralmente adecuada —por ser demasiado corta o larga, o por ser un nombre propio—, o su contenido es problemático, o no es una palabra real.' },
+      { title: 'Tipo 2 — Válida, pero no apta para el juego', bullets: [
+          'Nombres de lugares, como ciudades, países y regiones, sean conocidos o no. En el proyecto en español, los topónimos nunca son de Tipo 1 (ej. Alemania, Alcalá).',
+          'Formas flexionadas: plurales, formas femeninas de adjetivos y formas verbales que no están en infinitivo (ej. Nieves, Palacios, Antigua).',
+          'Palabras reales que el hablante promedio probablemente no conoce en absoluto (ej. Marfil, Alcor).',
+          'Palabras de interés muy específico o reducido (ej. estetoscopio).',
+          'Artículos determinados: las / los',
+          'También entran aquí: términos muy técnicos que la mayoría de la gente desconoce, y términos muy religiosos, académicos y médicos.'
+        ], kisacasi: 'La palabra es real y tiene significado, pero es un nombre propio, una forma flexionada o es demasiado específica o rara para que el jugador promedio la reconozca.' },
       { title: 'Tipo 3 — Palabra jugable', bullets: [
-          'Palabras que el hablante promedio de español reconocería sin contexto',
-          'Solo es válida la forma base o de diccionario: singular en los sustantivos, masculino singular en los adjetivos, infinitivo en los verbos',
-          'Objetos concretos (ej. isla, mar, acuario)',
-          'Adjetivos comunes (ej. marino)',
-          'Conceptos comunes, abstractos o concretos (ej. monte, laguna)',
-          'Los usos formales, literarios, anticuados o figurados se quedan aquí (ej. el sentido de "odisea" como largo periplo/sufrimiento — se reconoce, pero no se usa en el habla cotidiana)'
+          'Palabras que el hablante promedio de español reconocería sin contexto.',
+          'Solo es válida la forma base o de diccionario: singular en los sustantivos, masculino singular en los adjetivos e infinitivo en los verbos.',
+          'Objetos o elementos concretos (ej. isla, mar, acuario).',
+          'Adjetivos comunes (ej. marino).',
+          'Conceptos comunes, abstractos o concretos (ej. monte, laguna).',
+          'Las palabras formales, literarias, antiguas o con sentido figurado con las que la gente está familiarizada permanecen aquí. Por ejemplo, odisea, con el sentido de un viaje o proceso largo y difícil, se reconoce, aunque no se utilice frecuentemente en el habla cotidiana.'
         ], kisacasi: 'Todos la conocen, todos la entienden — pero no es tan cotidiana/común como las de Tipo 4.' },
       { title: 'Tipo 4 — Palabra núcleo', bullets: [
-          'Palabras que realmente podemos usar en el juego, conocidas por todos',
-          '¿La reconocería de inmediato una persona cualquiera, sin importar su edad o nivel educativo? Si la respuesta es sí, es Tipo 4',
-          'Las mejores palabras de Tipo 3 se convierten en Tipo 4',
-          'La longitud no es un problema (ej. ciudad, mensaje, ordenador, jersey también pueden ser Tipo 4)'
-        ], kisacasi: 'Palabras que se pueden usar en el juego, conocidas por todos — sean generosos, no es una lista reducida.' }
+          'Palabras que realmente podemos utilizar en el juego y que son conocidas por todos.',
+          'Si cualquier persona reconoce la palabra, es de Tipo 4.',
+          'Las mejores palabras de Tipo 3 se convierten en Tipo 4.',
+          'La longitud no es un problema. Por ejemplo, ciudad, mensaje, ordenador y jersey también pueden ser de Tipo 4.'
+        ], kisacasi: 'Palabras que se pueden utilizar en el juego y que son conocidas por todos. Es un grupo amplio, no una lista limitada.' }
     ]
   }
 };
@@ -608,11 +641,23 @@ function selectType(i, type) {
 }
 
 // ── Nav ──
+// lastNavAt: hızlı çift tıklamada (veya çift Enter'da) goNext/goBack'in aynı
+// anda iki kez çalışıp currentPage'i 2 birden artırması/azaltması, arada bir
+// sayfayı (10 kelime) hiç göstermeden atlamasına yol açıyordu. Kısa bir
+// debounce ile bu önleniyor.
+var lastNavAt = 0;
+var NAV_DEBOUNCE_MS = 400;
 function goNext() {
+  var now = Date.now();
+  if (now - lastNavAt < NAV_DEBOUNCE_MS) return;
+  lastNavAt = now;
   saveProgress();
   if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
 }
 function goBack() {
+  var now = Date.now();
+  if (now - lastNavAt < NAV_DEBOUNCE_MS) return;
+  lastNavAt = now;
   saveProgress();
   if (currentPage > 0) { currentPage--; renderPage(); }
 }
@@ -651,7 +696,9 @@ function saveProgress() {
   setSave('Saving...');
 
   var payload = toSave.map(function(item) {
-    return { kelime: item.w.kelime, harf_sayisi: item.w.kelime.length, type: item.type };
+    // row: aynı kelime task içinde tekrar edebildiği için backend'de birincil
+    // eşleştirme anahtarı — bkz. gas_code.js submitBatch.
+    return { kelime: item.w.kelime, row: item.w.row, harf_sayisi: item.w.kelime.length, type: item.type };
   });
 
   apiFetch({
@@ -691,7 +738,7 @@ function sendKeepaliveSave() {
   var toSave = [];
   for (var i = 0; i < allWords.length; i++) {
     if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
-      toSave.push({ kelime: allWords[i].kelime, harf_sayisi: allWords[i].kelime.length, type: selections[i] });
+      toSave.push({ kelime: allWords[i].kelime, row: allWords[i].row, harf_sayisi: allWords[i].kelime.length, type: selections[i] });
     }
   }
   if (toSave.length === 0) return;
