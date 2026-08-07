@@ -457,6 +457,53 @@ var DESCRIPTIONS = {
           'La longitud no es un problema. Por ejemplo, ciudad, mensaje, ordenador y jersey también pueden ser de Tipo 4.'
         ], kisacasi: 'Palabras que se pueden utilizar en el juego y que son conocidas por todos. Es un grupo amplio, no una lista limitada.' }
     ]
+  },
+  PT: {
+    label: 'Descrições dos tipos',
+    types: [
+      { title: 'Tipo 1 — Palavras que nunca serão utilizadas no jogo', bullets: [
+          'O que determina a classificação é a estrutura da palavra, não o seu significado — se se enquadrar num dos grupos abaixo, é Tipo 1 mesmo sendo familiar',
+          'Nome próprio (joana, fernando): nome ou apelido de uma pessoa real, histórica ou lendária',
+          'Exceção 1: se a palavra também puder ser lida como palavra comum e essa leitura for pelo menos tão forte, considera-se palavra comum (ex.: rio, porto)',
+          'Exceção 2: maria, joão, pedro, josé — simultaneamente muito comuns e centrais na tradição cristã — pertencem ao Tipo 2. Um nome apenas comum (joana) permanece no Tipo 1',
+          'Nome de empresa, marca ou produto',
+          'Sigla ou abreviatura — sempre Tipo 1, independentemente da frequência de uso no dia a dia',
+          'Nome de substância controlada ou droga ilegal',
+          'Palavra muito curta — menos de 3 letras (o, a, os, as)',
+          'Palavra muito longa — 13 letras ou mais, mesmo sendo comum ou do dia a dia',
+          'Palavrão, calão ou insulto — tem de ser genuinamente ofensivo ou vulgar; não basta ser um "tema sensível"',
+          'Sequência sem sentido — não corresponde a uma palavra ou nome real (se existir mas for muito rara, aplica-se o Tipo 2)'
+        ], kisacasi: 'Tipo 1 = nome próprio, marca, sigla, palavra muito curta ou muito longa, vulgar, ou não é uma palavra real — nunca é utilizada.' },
+      { title: 'Tipo 2 — Palavras válidas, mas não adequadas ao jogo', bullets: [
+          'São palavras reais e corretas; não se usam por serem específicas, raras, flexionadas ou sensíveis',
+          'Topónimo (lisboa): cidade, país ou região — sempre aqui, independentemente da fama ou dimensão (salvo a exceção rio/porto)',
+          'Nome religioso e comum (maria, joão, pedro, josé): categoria muito restrita — apenas nomes simultaneamente muito comuns e centrais na tradição religiosa, não qualquer nome de santo',
+          'Forma flexionada: plural, forma feminina de adjetivo, ou forma verbal conjugada (não infinitiva) de uma palavra cuja forma-base seria Tipo 3 ou 4',
+          'Palavra funcional mais longa (você, isso, dele, comigo, porque): acima do limite de "palavra muito curta", mas ainda pronome, conjunção ou contração',
+          'Palavra rara ou especializada: existe, mas o falante médio provavelmente não a reconhece',
+          'Conceito restrito a um domínio específico (milionésimo): compreensível, mas próprio de contextos jurídicos, académicos ou similares — não do dia a dia',
+          'Conotação vulgar sem ser palavrão: neutra ou clínica em si mesma, mas com conotação vulgar ou sexual predominante (sexo, por si só, mantém-se Tipo 3)'
+        ], kisacasi: 'Tipo 2 = palavra correta, mas é nome próprio/topónimo, forma flexionada, muito rara, ou tem uma conotação sensível.' },
+      { title: 'Tipo 3 — Palavras comuns, mas não do nível "mais básico"', bullets: [
+          'As quatro condições seguintes têm todas de se verificar:',
+          '(1) Tem um significado claro e independente',
+          '(2) O falante médio reconhece esse significado sem explicação',
+          '(3) Esse reconhecimento aplica-se ao uso diário, não a um domínio restrito',
+          '(4) Está na forma de citação/base: substantivo no singular, adjetivo no masculino singular, verbo no infinitivo',
+          'Subcategorias: objeto concreto (coisa física, animal, tipo de lugar), adjetivo comum, ação comum na forma infinitiva (comer, dormir), conceito neutro do dia a dia',
+          'Inclui prefixos produtivos e reconhecíveis isoladamente (mega, pré, trans, hiper); prefixos raros ou técnicos como sesqui pertencem ao Tipo 2',
+          'Em caso de dúvida, escolhe Tipo 2 em vez de Tipo 3 — a decisão inclina-se sempre para o lado mais conservador'
+        ], kisacasi: 'Tipo 3 = palavra correta, comum, compreendida por todos — mas não suficientemente básica para ser Tipo 4.' },
+      { title: 'Tipo 4 — As palavras essenciais do jogo', bullets: [
+          'Subconjunto mais restrito, escolhido dentro do Tipo 3 — a palavra tem primeiro de cumprir todas as condições do Tipo 3',
+          'O teste: "uma pessoa comum, de qualquer idade ou nível de escolaridade, reconhece esta palavra instantaneamente, sem precisar de explicação, e ela é realmente utilizável no jogo?" Se a resposta for claramente sim, é Tipo 4',
+          'O comprimento, por si só, não é um impedimento: uma palavra do dia a dia e muito conhecida pode ser longa e ainda assim ser Tipo 4 (floresta, atenção). Apenas 13+ letras permanece sempre no Tipo 1',
+          'Proporção alvo: aproximadamente 15% do total de palavras classificadas',
+          'Quantidade total alvo: 2000 a 3000 palavras Tipo 4 no projeto — nem menos, nem mais',
+          'Prioridade por comprimento: dá prioridade especial a palavras com 4 a 8 letras, o intervalo de maior valor para o projeto',
+          'O critério mantém-se exigente: Tipo 4 não se atribui por a palavra ser apenas comum ou segura, mas por ser genuinamente uma das palavras mais básicas do idioma — não classifiques como Tipo 4 qualquer palavra familiar'
+        ], kisacasi: 'Tipo 4 = condições do Tipo 3 + estar entre as palavras mais básicas e reconhecíveis do idioma. Presta atenção às palavras de 4 a 8 letras genuinamente conhecidas por todos, para atingir o objetivo de 2000-3000 (aproximadamente 15%), sem baixar o critério de exigência.' }
+    ]
   }
 };
 
@@ -527,7 +574,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
