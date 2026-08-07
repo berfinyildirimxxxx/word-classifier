@@ -4,7 +4,8 @@ var RESULTS = {
   'TR': '1B5F24YxM3aOedWoiB7oJ1xcO2MucRcLmwdG0pFODCGQ',         // FTW Results TR
   'EN': '1lg-u01ymZZB0nK0GOnYFt3cq6tZ39Z1LL36bKsMCM18',         // FTW Results EN
   'RU': '139sob08OmOENQfvJyXYIRbgzmlUVwzrGMl9sMBfXocA',         // FTW Results RU
-  'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE'          // FTW Results ES
+  'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE',         // FTW Results ES
+  'PT': '11nLTTSVbcxcYZATeUZoUn-PMfFLfr8nOU7sU8KreW-E'          // FTW Results PT
 };
 
 // ─── GET router ───────────────────────────────────────────────────
