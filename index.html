@@ -205,10 +205,17 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 8;
+var CODE_VERSION = 9;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v9 DEĞİŞİKLİK LOGU:
+
+  1) FR (Fransızca) desteği eklendi: DESCRIPTIONS.FR, langNames.FR.
+     Backend'de RESULTS.FR için spreadsheet ID gas_code.js'e yazılmalı
+     (FTW Results FR). HTML tarafında task=FR_xxx olunca sidebar
+     Fransızca type açıklamalarını gösterir.
+
   v8 DEĞİŞİKLİK LOGU:
 
   1) ES (İspanyolca) desteği geri eklendi (RESULTS.ES, langNames.ES,
@@ -502,7 +509,45 @@ var DESCRIPTIONS = {
           'Quantidade total alvo: 2000 a 3000 palavras Tipo 4 no projeto — nem menos, nem mais',
           'Prioridade por comprimento: dá prioridade especial a palavras com 4 a 8 letras, o intervalo de maior valor para o projeto',
           'O critério mantém-se exigente: Tipo 4 não se atribui por a palavra ser apenas comum ou segura, mas por ser genuinamente uma das palavras mais básicas do idioma — não classifiques como Tipo 4 qualquer palavra familiar'
-        ], kisacasi: 'Tipo 4 = condições do Tipo 3 + estar entre as palavras mais básicas e reconhecíveis do idioma. Presta atenção às palavras de 4 a 8 letras genuinamente conhecidas por todos, para atingir o objetivo de 2000-3000 (aproximadamente 15%), sem baixar o critério de exigência.' }
+        ],         kisacasi: 'Tipo 4 = condições do Tipo 3 + estar entre as palavras mais básicas e reconhecíveis do idioma. Presta atenção às palavras de 4 a 8 letras genuinamente conhecidas por todos, para atingir o objetivo de 2000-3000 (aproximadamente 15%), sem baixar o critério de exigência.' }
+    ]
+  },
+  FR: {
+    label: 'Descriptions des types',
+    types: [
+      { title: 'Type 1 — À exclure entièrement du jeu', bullets: [
+          'Le mot ne doit jamais apparaître dans le jeu si l’une des conditions suivantes s’applique',
+          'Nom propre : personne, lieu, marque, entreprise',
+          'Insulte / grossièreté, ou contenu à caractère sexuel',
+          'Mot étranger ou régional totalement inconnu en France',
+          'Mot structurellement invalide',
+          'Abréviation — automatiquement Type 1, quelle que soit la fréquence d’usage quotidien (SNCF, TGV, RER, etc.). Le simple fait d’être une abréviation suffit ; aucun test de notoriété n’est nécessaire',
+          'Exemples : sncf — abréviation (Société Nationale des Chemins de fer Français), Type 1 automatique ; aaliyah — prénom, nom propre ; alger — nom de lieu (capitale de l’Algérie) ; con — bien que très courant à l’oral, reste une véritable insulte (sa perception « légère » ne le fait pas remonter de type)'
+        ], kisacasi: 'Nom propre, insulte, contenu sexuel, mot inconnu en France, forme invalide, ou abréviation — jamais dans le jeu.' },
+      { title: 'Type 2 — Valide mais restreint / spécial / sensible', bullets: [
+          'Le mot est réel et valide, mais un joueur ordinaire ne le rencontre pas librement au quotidien',
+          'Termes techniques ou spécialisés ; mots rares',
+          'Argot',
+          'Conjugaisons verbales rares ou littéraires',
+          'Noms d’alcools ou de substances',
+          'Termes régionaux (Québec / Belgique / Suisse) connus en France mais peu usités',
+          'Exemples : chantâmes — passé simple de « chanter », temps rare/littéraire, jamais utilisé à l’oral courant ; meuf — argot/verlan (de « femme »), courant dans le langage familier mais pas un mot général/formel ; septante — connu en France (reconnu, appris à l’école) mais non utilisé au quotidien, terme régional (Belgique/Suisse) ; scapulalgie — terme médical/technique, nécessite une connaissance spécialisée'
+        ], kisacasi: 'Mot réel, mais trop technique, rare, argotique, littéraire, régional ou sensible pour un usage quotidien libre.' },
+      { title: 'Type 3 — Courant, connu du joueur ordinaire (objectif : ~50 % du batch)', bullets: [
+          'Mots qu’un joueur français ordinaire rencontre et reconnaît dans la vie quotidienne, d’usage actuel et actif',
+          'Différence avec le Type 4 : ces mots sont courants et familiers, mais ce n’est pas le vocabulaire fondamental absolu que « tout le monde, quel que soit son âge ou son parcours, connaît instantanément sans réfléchir »',
+          'Un peu plus abstraits, plus contextuels, ou simplement d’un usage courant « moyen »',
+          'Environ la moitié d’un batch devrait relever de ce type — ce n’est pas un objectif strict, plutôt une tendance générale',
+          'Exemples : réunion — courant, mais pas un objet/concept quotidien aussi concret que le Type 4 ; expliquer — verbe courant, fréquent dans la conversation quotidienne ; bibliothèque — tout le monde connaît, mais ce n’est pas un « objet » rencontré chaque jour ; rapide — adjectif courant, fondamental mais moins « immédiat » que les noms concrets du Type 4'
+        ], kisacasi: 'Courant et connu du joueur français ordinaire (~50 % du batch) — familier, mais pas le vocabulaire le plus fondamental (Type 4).' },
+      { title: 'Type 4 — Vocabulaire de base, le plus reconnaissable (objectif : ~20 % du batch)', bullets: [
+          'Mots que tout le monde connaît avec certitude, quel que soit l’âge, l’éducation ou le parcours',
+          'Généralement des objets concrets, des êtres vivants de base, des actions/concepts quotidiens — le type de mots qu’un enfant apprend en premier',
+          'Ce sont les mots « les plus beaux », les plus incontestables du dictionnaire',
+          'Environ un cinquième d’un batch devrait relever de ce type ; l’exactitude parfaite n’est pas requise, mais cette proportion doit être gardée à l’esprit',
+          'Les mots qui méritent clairement ce type doivent y être classés généreusement',
+          'Exemples : arbre, chaise, téléphone, ordinateur, mariage, oiseau'
+        ], kisacasi: 'Vocabulaire de base que tout le monde connaît avec certitude (~20 % du batch). Classer généreusement les mots qui le méritent clairement.' }
     ]
   }
 };
@@ -574,7 +619,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
