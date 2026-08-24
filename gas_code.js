@@ -5,7 +5,8 @@ var RESULTS = {
   'EN': '1lg-u01ymZZB0nK0GOnYFt3cq6tZ39Z1LL36bKsMCM18',         // FTW Results EN
   'RU': '139sob08OmOENQfvJyXYIRbgzmlUVwzrGMl9sMBfXocA',         // FTW Results RU
   'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE',         // FTW Results ES
-  'PT': '11nLTTSVbcxcYZATeUZoUn-PMfFLfr8nOU7sU8KreW-E'          // FTW Results PT
+  'PT': '11nLTTSVbcxcYZATeUZoUn-PMfFLfr8nOU7sU8KreW-E',         // FTW Results PT
+  'FR': '14YHoEqb12na4NQ4_CUD-O1Rz-AqJeloPvkoJ0YeBg4w'         // FTW Results FR
 };
 
 // ─── GET router ───────────────────────────────────────────────────
