@@ -205,10 +205,17 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 9;
+var CODE_VERSION = 10;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v10 DEĞİŞİKLİK LOGU:
+
+  1) DE (Almanca) desteği eklendi: DESCRIPTIONS.DE, langNames.DE,
+     RESULTS.DE (FTW Results DE). task=DE_xxx olunca sidebar Almanca
+     type açıklamalarını gösterir. Sözlük: FTW Dictionaries "DE" sekmesi;
+     sonuçlar: DE_Tasks + DE_Results.
+
   v9 DEĞİŞİKLİK LOGU:
 
   1) FR (Fransızca) desteği eklendi: DESCRIPTIONS.FR, langNames.FR.
@@ -549,6 +556,46 @@ var DESCRIPTIONS = {
           'Exemples : arbre, chaise, téléphone, ordinateur, mariage, oiseau'
         ], kisacasi: 'Vocabulaire de base que tout le monde connaît avec certitude (~20 % du batch). Classer généreusement les mots qui le méritent clairement.' }
     ]
+  },
+  DE: {
+    label: 'Typbeschreibungen',
+    types: [
+      { title: 'Typ 1 — Vollständig aus dem Spiel auszuschließen', bullets: [
+          'Eigenname: Person, Ort, Marke, Unternehmen',
+          'Beleidigung, Vulgärausdruck oder eindeutig sexueller Inhalt',
+          'Fremdes oder rein regionales Wort, das in Deutschland nicht bekannt ist (z. B. rein österreichische oder schweizerische Begriffe)',
+          'Strukturell ungültige Form',
+          'Abkürzung — automatisch Typ 1, unabhängig von der Häufigkeit im Alltag (z. B. ADAC, TÜV, ARD). Allein die Tatsache, eine Abkürzung zu sein, genügt; keine Bekanntheitsprüfung nötig',
+          'Veraltete Rechtschreibung vor der Reform von 1996 — kurzes „ß" statt „ss" (z. B. „daß", „Fluß", „Prozeß"); langes „ß" nach langem Vokal/Diphthong (Fuß, groß, Straße) ist davon NICHT betroffen und bleibt normal',
+          'Beispiele: jänner — österreichische Bezeichnung für Januar, in Deutschland nicht gebräuchlich; fluß — veraltete Schreibung von „Fluss", automatisch Typ 1; scheiße — auch wenn im Alltag sehr häufig, bleibt es ein echtes Schimpfwort (seine „harmlose" Wahrnehmung ändert den Typ nicht)'
+        ], kisacasi: 'Eigenname, Beleidigung, sexueller Inhalt, in Deutschland unbekanntes Wort, ungültige Form, Abkürzung oder veraltete Rechtschreibung — kommt nie im Spiel vor.' },
+      { title: 'Typ 2 — Gültig, aber eingeschränkt/speziell/sensibel', bullets: [
+          'Das Wort ist real und gültig, aber eine durchschnittliche Person begegnet ihm im Alltag nicht frei',
+          'Fachbegriffe oder Spezialwörter (Medizin, Recht, Technik)',
+          'Seltene Wörter, die kaum bekannt sind',
+          'Umgangssprache/Jugendsprache',
+          'Regelkonform gebildete, aber kaum tatsächlich gebräuchliche Zusammensetzungen (Komposita) oder Ableitungen',
+          'Namen von alkoholischen Getränken oder Substanzen',
+          'Wörter mit einer derben/sexuellen Nebenbedeutung, deren neutrale Hauptbedeutung überwiegt',
+          'Groß-/kleingeschriebene Doppelform, bei der die kleingeschriebene Verb-/Adjektivform seltener ist als die großgeschriebene, substantivierte Form',
+          'Beispiele: Abbaubarkeit — regelkonforme, aber abstrakte/seltene Ableitung; Kohle — Umgangssprache für „Geld"; Bier, Wein — Alkohol; geil — heute vor allem umgangssprachlich „toll/super", die ursprüngliche sexuelle Bedeutung bleibt als Nebenbedeutung bestehen; abkommen (Verb, „vom Weg abkommen") — seltener im Alltag als das gleich geschriebene Substantiv „Abkommen"'
+        ], kisacasi: 'Wort ist real und verständlich, aber zu technisch, selten, umgangssprachlich oder sensibel für den freien Alltagsgebrauch.' },
+      { title: 'Typ 3 — Alltäglich, aber nicht Grundwortschatz (Ziel: ca. 30 % — keine strikte Vorgabe)', bullets: [
+          'Das Wort ist korrekt, bekannt und im Alltag verständlich — aber nicht der absolute Grundwortschatz, den wirklich jeder ohne nachzudenken sofort erkennt',
+          'Test: Erkennt man das Wort sofort wie „Apfel", oder braucht man einen kurzen Moment und denkt „ach ja, das gibt es auch"? Im zweiten Fall: Typ 3',
+          'Oft etwas spezifischer, abstrakter oder einem bestimmten Kontext (Beruf, Institution, Fachgebiet) zugeordnet, ohne deshalb ein reiner Fachbegriff (Typ 2) zu sein',
+          'Ziel: etwa 30 % eines Batches — als grobe Tendenz, keine strikte Vorgabe',
+          'Beispiele: Besprechung — geläufig, aber nicht so konkret-alltäglich wie Typ 4; erklären — alltägliches Verb; Bibliothek — jeder kennt es, aber kein Gegenstand des täglichen Umgangs; schnell — geläufiges Adjektiv, weniger „sofort" als konkrete Typ-4-Nomen'
+        ], kisacasi: 'Alltäglich und dem durchschnittlichen Sprecher in Deutschland bekannt (ca. 30 % des Batches) — vertraut, aber nicht der absolute Grundwortschatz (Typ 4).' },
+      { title: 'Typ 4 — Grundwortschatz, am eindeutigsten erkennbar (Ziel: ca. 20 % — keine strikte Vorgabe)', bullets: [
+          'Wörter, die wirklich jeder kennt — unabhängig von Alter, Bildung oder Herkunft',
+          'In der Regel konkrete Alltagsgegenstände, grundlegende Lebewesen, alltägliche Handlungen und Konzepte — Wörter, die ein Kind zuerst lernt',
+          'Das sind die unstrittigsten Wörter des Wörterbuchs',
+          'Etwa ein Fünftel eines Batches sollte diesem Typ entsprechen; perfekte Genauigkeit ist nicht nötig, aber diese Größenordnung im Blick behalten',
+          'Wörter, die diesen Typ eindeutig verdienen, großzügig so einstufen',
+          'Beispiele: Baum, Stuhl, Telefon, Computer, Hochzeit, Vogel, Apfel'
+        ], kisacasi: 'Grundwortschatz, den wirklich jeder sofort kennt (ca. 20 % des Batches). Wörter, die das eindeutig verdienen, großzügig so einstufen.' }
+    ]
   }
 };
 
@@ -619,7 +666,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
