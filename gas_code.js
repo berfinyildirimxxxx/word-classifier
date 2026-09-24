@@ -6,7 +6,8 @@ var RESULTS = {
   'RU': '139sob08OmOENQfvJyXYIRbgzmlUVwzrGMl9sMBfXocA',         // FTW Results RU
   'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE',         // FTW Results ES
   'PT': '11nLTTSVbcxcYZATeUZoUn-PMfFLfr8nOU7sU8KreW-E',         // FTW Results PT
-  'FR': '14YHoEqb12na4NQ4_CUD-O1Rz-AqJeloPvkoJ0YeBg4w'         // FTW Results FR
+  'FR': '14YHoEqb12na4NQ4_CUD-O1Rz-AqJeloPvkoJ0YeBg4w',         // FTW Results FR
+  'DE': '1BbKGtof9FuBgTcsD1xB3UrGP0ZGtEjkxGpCzEhW-m10'          // FTW Results DE
 };
 
 // ─── GET router ───────────────────────────────────────────────────
@@ -123,7 +124,7 @@ function submitWord(p) {
     if (!resultsTab) return { error: lang + '_Results sekmesi bulunamadı' };
 
     ensureHeader_(resultsTab);
-    upsertWord_(resultsTab, worker, task, kelime, p.harf_sayisi || kelime.length, type, row);
+    upsertWord_(resultsTab, RESULTS[lang], worker, task, kelime, p.harf_sayisi || kelime.length, type, row);
     return { ok: true };
   } finally {
     // flush olmadan releaseLock çağırmak, bir sonraki execution'ın bu yazmayı
@@ -159,33 +160,25 @@ function submitBatch(body) {
     if (!resultsTab) return { error: lang + '_Results sekmesi bulunamadı' };
 
     ensureHeader_(resultsTab);
+    var sheetRowCol = ensureSheetRowIndex_(resultsTab);
+    SpreadsheetApp.flush();
 
-    // Mevcut tüm veriyi bir kere oku (her kelime için tekrar okumamak adına)
-    var data   = resultsTab.getDataRange().getValues();
-    var h      = data[0];
-    var iW     = h.indexOf('worker_email');
-    var iT     = h.indexOf('task_id');
-    var iK     = h.indexOf('kelime');
-    var iScore = h.indexOf('score');
-    var iTime  = h.indexOf('timestamp');
-    var iRow   = h.indexOf('row');
+    var map    = headerMap_(resultsTab);
+    var iScore = map.score - 1;
+    var iTime  = map.timestamp - 1;
+    var iRow   = map.row - 1;
 
-    // Mevcut satırları indexle. Aynı kelime bir task içinde tekrar edebiliyor,
-    // bu yüzden birincil anahtar 'row' (dictionary'deki satır no). 'row' bilgisi
-    // olmayan (v8 öncesi) eski kayıtlar geriye dönük uyumluluk için kelimeyle
-    // eşleştirilir (bu eşleşme yalnızca bir kez kullanılır, bkz. delete altta).
+    // Tüm sonuç sayfasını Apps Script'e çekme. 45 bin satırlık DE_Results
+    // getValues() ile 60sn'yi aşıyordu. Sheets'in kendi filtresi sadece bu
+    // worker + task satırlarını döndürür (~1sn).
+    var found = queryWorkerTask_(RESULTS[lang], resultsTab, worker, task);
     var existingByRow = {};
     var existingByKelime = {};
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][iW]) === worker && String(data[i][iT]).toUpperCase() === task) {
-        var storedRow = iRow !== -1 ? data[i][iRow] : '';
-        if (storedRow !== '' && storedRow != null) {
-          existingByRow[String(storedRow)] = i + 1; // 1-indexed sheet row
-        } else {
-          existingByKelime[String(data[i][iK])] = i + 1;
-        }
-      }
-    }
+    found.forEach(function(r) {
+      if (!r.sheetRow) return;
+      if (r.dictRow !== '' && r.dictRow != null) existingByRow[String(r.dictRow)] = r.sheetRow;
+      else existingByKelime[r.kelime] = r.sheetRow;
+    });
 
     var now = new Date();
     var newRows = [];
@@ -226,6 +219,9 @@ function submitBatch(body) {
     if (newRows.length > 0) {
       var lastRow = resultsTab.getLastRow();
       resultsTab.getRange(lastRow + 1, 1, newRows.length, 7).setValues(newRows);
+      var indexVals = [];
+      for (var n = 0; n < newRows.length; n++) indexVals.push([lastRow + 1 + n]);
+      resultsTab.getRange(lastRow + 1, sheetRowCol, indexVals.length, 1).setValues(indexVals);
     }
 
     return { ok: true, saved: words.length, updated: updatedCount, inserted: newRows.length };
@@ -259,33 +255,35 @@ function ensureHeader_(tab) {
 }
 
 // ─── Yardımcı: Tek kelime upsert ─────────────────────────────────
-function upsertWord_(resultsTab, worker, task, kelime, harf, type, row) {
-  var data  = resultsTab.getDataRange().getValues();
-  var h     = data[0];
-  var iW    = h.indexOf('worker_email');
-  var iT    = h.indexOf('task_id');
-  var iK    = h.indexOf('kelime');
-  var iScore = h.indexOf('score');
-  var iTime = h.indexOf('timestamp');
-  var iRow  = h.indexOf('row');
+function upsertWord_(resultsTab, spreadsheetId, worker, task, kelime, harf, type, row) {
+  var sheetRowCol = ensureSheetRowIndex_(resultsTab);
+  SpreadsheetApp.flush();
+  var map = headerMap_(resultsTab);
   var rowKey = (row !== undefined && row !== null) ? String(row) : null;
-
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][iW]) !== worker || String(data[i][iT]).toUpperCase() !== task) continue;
-    var storedRow  = iRow !== -1 ? data[i][iRow] : '';
-    var hasRowInfo = storedRow !== '' && storedRow != null;
-    var isMatch = hasRowInfo ? (rowKey !== null && String(storedRow) === rowKey)
-                              : (String(data[i][iK]) === kelime);
-    if (isMatch) {
-      resultsTab.getRange(i + 1, iScore + 1).setValue(type);
-      resultsTab.getRange(i + 1, iTime + 1).setValue(new Date());
-      if (!hasRowInfo && rowKey !== null && iRow !== -1) {
-        resultsTab.getRange(i + 1, iRow + 1).setValue(row); // eski kaydı row bilgisiyle tamamla
-      }
-      return;
+  var found = queryWorkerTask_(spreadsheetId, resultsTab, worker, task);
+  var existingRow = 0;
+  var healedFromKelime = false;
+  for (var i = 0; i < found.length; i++) {
+    var r = found[i];
+    if (!r.sheetRow) continue;
+    if (rowKey !== null && r.dictRow !== '' && r.dictRow != null && String(r.dictRow) === rowKey) {
+      existingRow = r.sheetRow;
+      break;
+    }
+    if (!existingRow && (r.dictRow === '' || r.dictRow == null) && r.kelime === kelime) {
+      existingRow = r.sheetRow;
+      healedFromKelime = true;
     }
   }
-  resultsTab.appendRow([worker, task, kelime, harf, type, new Date(), row]);
+  if (existingRow) {
+    resultsTab.getRange(existingRow, map.score).setValue(type);
+    resultsTab.getRange(existingRow, map.timestamp).setValue(new Date());
+    if (healedFromKelime && rowKey !== null) resultsTab.getRange(existingRow, map.row).setValue(row);
+    return;
+  }
+  var lastRow = resultsTab.getLastRow() + 1;
+  resultsTab.getRange(lastRow, 1, 1, 7).setValues([[worker, task, kelime, harf, type, new Date(), row]]);
+  resultsTab.getRange(lastRow, sheetRowCol).setValue(lastRow);
 }
 
 // ─── Yardımcı: Tasks sekmesinden task config bul ──────────────────
@@ -312,24 +310,99 @@ function getExistingResults(resSS, lang, worker, task) {
   var tab = resSS.getSheetByName(lang + '_Results');
   if (!tab || tab.getLastRow() < 2) return { byRow: byRow, byKelime: byKelime };
 
-  var data  = tab.getDataRange().getValues();
-  var h     = data[0];
-  var iW     = h.indexOf('worker_email');
-  var iT     = h.indexOf('task_id');
-  var iK     = h.indexOf('kelime');
-  var iScore = h.indexOf('score');
-  var iRow   = h.indexOf('row');
-
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][iW]) === worker && String(data[i][iT]).toUpperCase() === task) {
-      var score = parseInt(data[i][iScore]);
-      var storedRow = iRow !== -1 ? data[i][iRow] : '';
-      if (storedRow !== '' && storedRow != null) {
-        byRow[String(storedRow)] = score;
-      } else {
-        byKelime[String(data[i][iK])] = score;
-      }
-    }
-  }
+  queryWorkerTask_(resSS.getId(), tab, worker, task).forEach(function(r) {
+    if (r.dictRow !== '' && r.dictRow != null) byRow[String(r.dictRow)] = r.score;
+    else byKelime[r.kelime] = r.score;
+  });
   return { byRow: byRow, byKelime: byKelime };
+}
+
+// Sonuç sayfasının tamamını scripte taşımak yerine Sheets sorgusu.
+// Sadece bu worker + task satırları gelir.
+function queryWorkerTask_(spreadsheetId, tab, worker, task) {
+  var map = headerMap_(tab);
+  ['worker_email', 'task_id', 'kelime', 'score', 'row'].forEach(function(name) {
+    if (!map[name]) throw new Error('Kolon yok: ' + name);
+  });
+  var select = [colLetter_(map.row), colLetter_(map.score), colLetter_(map.kelime)];
+  if (map.sheet_row) select.push(colLetter_(map.sheet_row));
+  var tq = 'select ' + select.join(', ')
+    + ' where ' + colLetter_(map.worker_email) + ' = ' + sqlQuote_(worker)
+    + ' and ' + colLetter_(map.task_id) + ' = ' + sqlQuote_(task);
+  var url = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId
+    + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tab.getName())
+    + '&tq=' + encodeURIComponent(tq)
+    + '&cb=' + Date.now();
+  var res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  var text = res.getContentText();
+  if (res.getResponseCode() !== 200) throw new Error('Sonuç sorgusu HTTP ' + res.getResponseCode());
+  var start = text.indexOf('{');
+  var end = text.lastIndexOf('}');
+  if (start < 0 || end < start) throw new Error('Sonuç sorgusu okunamadı');
+  var data = JSON.parse(text.substring(start, end + 1));
+  if (data.status !== 'ok') {
+    var err = data.errors && data.errors[0];
+    throw new Error('Sonuç sorgusu: ' + ((err && (err.detailed_message || err.message)) || 'bilinmeyen'));
+  }
+  var rows = (data.table && data.table.rows) || [];
+  return rows.map(function(row) {
+    var c = row.c || [];
+    function v(idx) { return (c[idx] && c[idx].v != null) ? c[idx].v : ''; }
+    return {
+      dictRow: v(0),
+      score: parseInt(v(1), 10),
+      kelime: String(v(2)),
+      sheetRow: map.sheet_row ? Number(v(3)) : 0
+    };
+  });
+}
+
+function headerMap_(tab) {
+  var lastCol = Math.max(tab.getLastColumn(), 1);
+  var header = tab.getRange(1, 1, 1, lastCol).getValues()[0];
+  var map = {};
+  for (var i = 0; i < header.length; i++) {
+    if (header[i]) map[String(header[i])] = i + 1;
+  }
+  return map;
+}
+
+function colLetter_(n) {
+  var s = '';
+  while (n > 0) {
+    var m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function sqlQuote_(s) {
+  return "'" + String(s).replace(/'/g, "''") + "'";
+}
+
+// sheet_row: satırın kendi numarası. Güncelleme bu numarayla yapılır,
+// bütün sayfa okunmaz. ARRAYFORMULA kullanılmaz; getLastRow()'u şişirirdi.
+// Kolon doluysa tek hücre kontrolü, boşsa bir kerelik yazılır.
+function ensureSheetRowIndex_(tab) {
+  var map = headerMap_(tab);
+  var col = map.sheet_row;
+  if (!col) {
+    col = tab.getLastColumn() + 1;
+    tab.getRange(1, col).setValue('sheet_row');
+  }
+  var last = tab.getLastRow();
+  if (last < 2) return col;
+  if (Number(tab.getRange(last, col).getValue()) === last) return col;
+  var CHUNK = 8000;
+  for (var start = 2; start <= last; start += CHUNK) {
+    var n = Math.min(CHUNK, last - start + 1);
+    var vals = [];
+    for (var i = 0; i < n; i++) vals.push([start + i]);
+    tab.getRange(start, col, n, 1).setValues(vals);
+  }
+  return col;
 }
