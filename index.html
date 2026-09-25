@@ -209,6 +209,13 @@ var CODE_VERSION = 10;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v11 DEĞİŞİKLİK LOGU:
+
+  1) İstek süresi 60sn → 120sn. Asıl düzeltme gas_code.js'de: sonuç
+     sayfasının tamamı artık scripte çekilmiyor (DE ~45 bin satır, 60sn'yi
+     aşıyordu). Apps Script'e yapıştırıp aynı deployment'ı yeni versiyonla
+     güncellemek gerekiyor. İlk çalıştırmada UrlFetch izni istenebilir.
+
   v10 DEĞİŞİKLİK LOGU:
 
   1) DE (Almanca) desteği eklendi: DESCRIPTIONS.DE, langNames.DE,
@@ -627,7 +634,7 @@ function apiFetch(params) {
   var url = new URL(API_URL);
   Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
   var controller = new AbortController();
-  var timeout = setTimeout(function() { controller.abort(); }, 60000);
+  var timeout = setTimeout(function() { controller.abort(); }, 120000);
   return fetch(url.toString(), { signal: controller.signal })
     .then(function(res) { clearTimeout(timeout); if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
     .catch(function(err) {
@@ -811,8 +818,10 @@ function updateNav() {
   document.getElementById('pageInfo').textContent = (currentPage + 1) + ' / ' + totalPages;
 }
 
-// ── Bekleyen TÜM değişiklikleri (sadece mevcut sayfa değil, tüm allWords)
-//    kaydet — batch olarak, TEK istekte, çakışmaya karşı korumalı ──────────
+// GET URL'si uzayınca istek düşüyor ve biriken seçimler sheet'e hiç yazılmıyor.
+// Bu yüzden bekleyenlerin hepsi değil, en fazla SAVE_CHUNK kadarı gider.
+var SAVE_CHUNK = 40;
+
 function saveProgress() {
   if (isSavingInProgress) {
     // Zaten bir save devam ediyor: yeni bir istek AÇMA, mevcut save bitince
@@ -830,11 +839,12 @@ function saveProgress() {
   }
   if (toSave.length === 0) return;
 
+  var batch = toSave.slice(0, SAVE_CHUNK);
   isSavingInProgress = true;
   saveAgainNeeded = false;
   setSave('Saving...');
 
-  var payload = toSave.map(function(item) {
+  var payload = batch.map(function(item) {
     // row: aynı kelime task içinde tekrar edebildiği için backend'de birincil
     // eşleştirme anahtarı — bkz. gas_code.js submitBatch.
     return { kelime: item.w.kelime, row: item.w.row, harf_sayisi: item.w.kelime.length, type: item.type };
@@ -848,11 +858,15 @@ function saveProgress() {
   })
   .then(function(data) {
     if (data && data.error) throw new Error(data.error); // sunucu hata dönerse basarili sayma
-    toSave.forEach(function(item) { savedSelections[item.idx] = item.type; });
+    batch.forEach(function(item) { savedSelections[item.idx] = item.type; });
     isSavingInProgress = false;
+    if (toSave.length > batch.length || saveAgainNeeded) {
+      saveAgainNeeded = false;
+      saveProgress();
+      return;
+    }
     setSave('Saved ✓');
     setTimeout(function() { setSave(''); }, 2000);
-    if (saveAgainNeeded) { saveAgainNeeded = false; saveProgress(); }
   })
   .catch(function(err) {
     console.error('[saveProgress] apiFetch failed', {
@@ -881,6 +895,7 @@ function sendKeepaliveSave() {
     }
   }
   if (toSave.length === 0) return;
+  toSave = toSave.slice(0, SAVE_CHUNK);
   try {
     var url = new URL(API_URL);
     url.searchParams.set('action', 'submitBatch');
