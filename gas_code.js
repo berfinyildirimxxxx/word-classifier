@@ -7,7 +7,8 @@ var RESULTS = {
   'ES': '13X9nZdrmiCfw_UxnqVbYo1D4KWba9j77YmOCOutRDjE',         // FTW Results ES
   'PT': '11nLTTSVbcxcYZATeUZoUn-PMfFLfr8nOU7sU8KreW-E',         // FTW Results PT
   'FR': '14YHoEqb12na4NQ4_CUD-O1Rz-AqJeloPvkoJ0YeBg4w',         // FTW Results FR
-  'DE': '1BbKGtof9FuBgTcsD1xB3UrGP0ZGtEjkxGpCzEhW-m10'          // FTW Results DE
+  'DE': '1BbKGtof9FuBgTcsD1xB3UrGP0ZGtEjkxGpCzEhW-m10',         // FTW Results DE
+  'ID': '1lXLSRO-jCs_XT5JDpMsI0S5fH1cbQDBFPlbjSl3g3jQ'          // FTW Results ID
 };
 
 // ─── GET router ───────────────────────────────────────────────────
@@ -333,10 +334,21 @@ function queryWorkerTask_(spreadsheetId, tab, worker, task) {
     + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tab.getName())
     + '&tq=' + encodeURIComponent(tq)
     + '&cb=' + Date.now();
-  var res = UrlFetchApp.fetch(url, {
-    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-    muteHttpExceptions: true
-  });
+  var res;
+  try {
+    res = UrlFetchApp.fetch(url, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+  } catch (ex) {
+    // Deployment henüz script.external_request iznini almadıysa sorgu atılamaz.
+    // Sayfa tamamen 404/error olmasın diye eski tam okumaya düş.
+    var msg = String(ex && ex.message || ex);
+    if (msg.indexOf('external_request') !== -1 || msg.indexOf('UrlFetch') !== -1) {
+      return queryWorkerTaskScan_(tab, worker, task);
+    }
+    throw ex;
+  }
   var text = res.getContentText();
   if (res.getResponseCode() !== 200) throw new Error('Sonuç sorgusu HTTP ' + res.getResponseCode());
   var start = text.indexOf('{');
@@ -358,6 +370,28 @@ function queryWorkerTask_(spreadsheetId, tab, worker, task) {
       sheetRow: map.sheet_row ? Number(v(3)) : 0
     };
   });
+}
+
+function queryWorkerTaskScan_(tab, worker, task) {
+  var data = tab.getDataRange().getValues();
+  var h = data[0] || [];
+  var iW = h.indexOf('worker_email');
+  var iT = h.indexOf('task_id');
+  var iK = h.indexOf('kelime');
+  var iScore = h.indexOf('score');
+  var iRow = h.indexOf('row');
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    if (iW === -1 || iT === -1) break;
+    if (String(data[i][iW]) !== worker || String(data[i][iT]).toUpperCase() !== task) continue;
+    out.push({
+      dictRow: iRow !== -1 ? data[i][iRow] : '',
+      score: parseInt(data[i][iScore], 10),
+      kelime: String(data[i][iK]),
+      sheetRow: i + 1
+    });
+  }
+  return out;
 }
 
 function headerMap_(tab) {
