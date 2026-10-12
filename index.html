@@ -205,7 +205,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 10;
+var CODE_VERSION = 11;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
@@ -603,6 +603,63 @@ var DESCRIPTIONS = {
           'Beispiele: Baum, Stuhl, Telefon, Computer, Hochzeit, Vogel, Apfel'
         ], kisacasi: 'Grundwortschatz, den wirklich jeder sofort kennt (ca. 20 % des Batches). Wörter, die das eindeutig verdienen, großzügig so einstufen.' }
     ]
+  },
+  ID: {
+    label: 'Deskripsi Tipe',
+    types: [
+      { title: 'Tipe 1 — Dikecualikan sepenuhnya dari permainan', bullets: [
+          'Nama diri: orang, tempat, merek, perusahaan.',
+          'Makian, hinaan kasar, ujaran kebencian, atau konten seksual eksplisit (mis. goblok, bangsat, bajingan).',
+          'Kekerasan berat, kematian yang traumatis, atau konten yang sangat mengganggu (mis. mutilasi, pemerkosaan). Kata dasar seperti mati atau sakit TIDAK termasuk.',
+          'Konten menjijikkan: kotoran tubuh, kebusukan (mis. tahi).',
+          'Narkotika dan obat terlarang (mis. ganja, heroin, kokain). Minuman beralkohol BUKAN Tipe 1 (lihat Tipe 2).',
+          'Singkatan yang dibaca huruf demi huruf dan simbol: otomatis Tipe 1, seberapa pun dikenalnya (mis. DPR, KTP, TNI, kg). Cukup karena bentuknya singkatan; tidak perlu memeriksa seberapa dikenal.',
+          'Akronim yang sudah menjadi kata biasa dan ditulis dengan huruf kecil TIDAK termasuk. Nilailah seperti kata biasa (mis. pemilu, balita, tilang, puskesmas, rudal).',
+          'Bentuk tidak baku: ejaan yang menyimpang dari bentuk baku KBBI. Otomatis Tipe 1, seberapa pun seringnya dipakai sehari-hari (mis. silahkan → silakan, resiko → risiko, merubah → mengubah, sekedar → sekadar, nafas → napas). Bentuk bakunya dinilai seperti biasa.',
+          'Kata seru murni (mis. wah, aduh, cih).',
+          'Imbuhan atau partikel yang berdiri sendiri, bentuk yang tidak valid secara struktural, atau turunan yang tidak masuk akal.',
+          'Kata yang maknanya tidak dapat dipastikan: jika arti kata tidak diketahui, tandai Tipe 1.',
+          'Contoh: silahkan — bentuk tidak baku dari "silakan", otomatis Tipe 1; goblok — walaupun sangat sering dipakai, tetap makian (persepsi bahwa kata itu "ringan" tidak mengubah tipenya); KTP — singkatan, otomatis Tipe 1; heroin — narkotika.'
+        ], kisacasi: 'Nama diri, makian, konten seksual/kekerasan berat/menjijikkan, narkotika, singkatan, bentuk tidak baku, kata seru, bentuk tidak valid atau makna tidak diketahui: tidak pernah muncul dalam permainan.' },
+      { title: 'Tipe 2 — Valid, tetapi terbatas/khusus/sensitif', bullets: [
+          'Kata itu nyata dan benar, tetapi orang rata-rata tidak menjumpainya secara bebas dalam kehidupan sehari-hari.',
+          'Istilah teknis atau khusus: kedokteran, hukum, sains, teknik (mis. biopsi, yurisprudensi, litigasi).',
+          'Kata langka, arkais (berlabel "ark" di KBBI), sastra, atau terlalu formal.',
+          'Kata daerah: kata yang maknanya berlabel bahasa daerah di KBBI (<Jw> Jawa, <Sd> Sunda, <Mk> Minangkabau, <Bl> Bali, <Bt> Batak, <Mdr> Madura, <Dy> Dayak, dll.) dan kata yang hanya dipakai di Malaysia (<Mal>). Semuanya Tipe 2, seberapa pun dikenalnya di seluruh Indonesia (mis. panggon, encrak, pawagam, juga saung dan sowan).',
+          'Jika hanya makna sampingan yang berlabel daerah dan makna utamanya bahasa Indonesia umum, nilailah menurut makna utamanya (mis. aku, ojek, wayang, lemak bukan kata daerah).',
+          'Ragam cakapan dan slang (berlabel "cak" di KBBI; mis. gue, udah, gak, bokap, cuek).',
+          'Turunan berimbuhan yang sesuai kaidah tetapi jarang dipakai (mis. pembarutan, pendepositoan).',
+          'Bentuk varian gramatikal: bentuk pasif di-, bentuk ter-, dan bentuk berpartikel -kah/-lah/-pun (mis. dimakan, termakan). Turunan yang sudah menjadi kata tersendiri (makanan, pekerjaan, bermain) TIDAK termasuk; nilailah menurut seberapa dikenal.',
+          'Minuman beralkohol (mis. bir, tuak, arak).',
+          'Kata dengan makna sampingan kasar/seksual, tetapi makna utamanya netral dan lebih dominan (mis. anjing, babi: hewan, tetapi juga dipakai sebagai makian).',
+          'Hinaan ringan (mis. bodoh, tolol) dan label kejahatan (mis. pencuri, maling).',
+          'Semua istilah keagamaan (mis. masjid, gereja, doa, puasa, lebaran).',
+          'Label identitas: orientasi seksual, gender, etnis/ras (mis. gay, lesbian, waria, pribumi).',
+          'Nama penyakit dan gangguan kesehatan yang tidak berat (mis. flu, batuk, pilek, demam, diare, jerawat, sariawan). Kata umum seperti sakit TIDAK termasuk.',
+          'Nama bangsa, bahasa, dan tempat yang tercantum dengan huruf kecil (mis. arab, inggris, jawa). Nama bulan dan hari TIDAK termasuk (lihat Tipe 3/4).',
+          'Contoh: yurisprudensi — istilah hukum; gue — ragam cakapan untuk "saya"; dimakan — bentuk pasif, varian gramatikal dari "makan"; bir — minuman beralkohol; anjing — makna utamanya hewan, tetapi juga makian yang kasar; masjid — istilah keagamaan.'
+        ], kisacasi: 'Kata itu nyata dan dapat dipahami, tetapi terlalu teknis, langka, daerah, cakapan, gramatikal atau sensitif untuk penggunaan bebas sehari-hari.' },
+      { title: 'Tipe 3 — Umum, tetapi bukan kosakata dasar (target: sekitar 30%, bukan aturan ketat)', bullets: [
+          'Kata itu benar, dikenal, dan dipahami dalam kehidupan sehari-hari, tetapi bukan kosakata paling dasar yang langsung dikenali semua orang tanpa berpikir.',
+          'Uji: apakah kata itu langsung dikenali seperti "rumah", atau perlu sejenak berpikir "oh ya, kata itu ada"? Jika yang kedua: Tipe 3.',
+          'Sering lebih spesifik, abstrak, atau terkait konteks tertentu (pekerjaan, lembaga, bidang), tetapi bukan istilah teknis murni (Tipe 2).',
+          'Turunan berimbuhan yang sudah menjadi kata tersendiri dan dikenal luas (mis. menjelaskan, penilaian, kebijakan).',
+          'Formal, tetapi dikenal luas tanpa pelatihan khusus.',
+          'Nama bulan dan hari: Tipe 3 atau 4 menurut seberapa dikenal (mis. februari, senin).',
+          'Ada dalam kamus atau diajarkan di sekolah saja BELUM cukup.',
+          'Sekitar 30% dari satu batch, sebagai kecenderungan kasar, bukan aturan ketat.',
+          'Contoh: rapat — umum, tetapi tidak sekonkret kata Tipe 4; menjelaskan — kata kerja sehari-hari; perpustakaan — semua orang tahu, tetapi bukan benda yang dipakai setiap hari; cepat — kata sifat yang umum, tetapi kurang "langsung" dibanding kata benda konkret Tipe 4.'
+        ], kisacasi: 'Umum dan dikenal penutur rata-rata di Indonesia (sekitar 30% batch): akrab, tetapi bukan kosakata paling dasar (Tipe 4).' },
+      { title: 'Tipe 4 — Kosakata dasar, paling mudah dikenali (target: sekitar 20%, bukan aturan ketat)', bullets: [
+          'Kata yang benar-benar dikenal semua orang, tanpa memandang usia, pendidikan, atau daerah.',
+          'Biasanya benda sehari-hari yang konkret, makhluk hidup dasar, kegiatan dan konsep sehari-hari: kata yang pertama kali dipelajari anak-anak.',
+          'Turunan berimbuhan juga bisa Tipe 4 jika memang sedasar itu (mis. makanan, bermain).',
+          'Ini kata-kata paling tidak diragukan dalam kamus.',
+          'Sekitar seperlima dari satu batch sebaiknya Tipe 4. Ketepatan sempurna tidak diperlukan, tetapi tetap perhatikan besaran ini.',
+          'Kata yang jelas layak, golongkan ke tipe ini tanpa ragu.',
+          'Contoh: rumah, air, matahari, makan, ibu, ayah, kucing, pohon, kursi, telepon, komputer, burung, apel, pernikahan, besar, kecil.'
+        ], kisacasi: 'Kosakata dasar yang benar-benar langsung dikenal semua orang (sekitar 20% batch). Kata yang jelas layak, golongkan ke tipe ini tanpa ragu.' }
+    ]
   }
 };
 
@@ -673,7 +730,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
@@ -945,9 +1002,9 @@ function renderSidebar() {
   document.getElementById('toggleLabel').textContent = desc.label;
   var grid = document.getElementById('typeGrid');
   grid.innerHTML = desc.types.map(function(d) {
-    return '<div class="type-desc"><h3>' + d.title + '</h3><ul>' +
-      d.bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') +
-      '</ul><p class="kisacasi">' + d.kisacasi + '</p></div>';
+    return '<div class="type-desc"><h3>' + escapeHtml(d.title) + '</h3><ul>' +
+      d.bullets.map(function(b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') +
+      '</ul><p class="kisacasi">' + escapeHtml(d.kisacasi) + '</p></div>';
   }).join('');
 }
 </script>
