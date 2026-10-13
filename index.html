@@ -108,6 +108,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 .type-desc ul { margin: 4px 0 4px 14px; padding: 0; }
 .type-desc li { margin-bottom: 2px; line-height: 1.45; }
 .type-desc .kisacasi { font-size: 11px; font-style: italic; color: var(--text-secondary); margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--border); }
+.type-note { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.45; padding: 8px 10px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; color: #1E3A8A; }
 .sidebar-toggle {
   display: flex; width: 100%; background: none; border: none; font-family: inherit;
   font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
@@ -205,7 +206,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 11;
+var CODE_VERSION = 12;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
@@ -660,6 +661,67 @@ var DESCRIPTIONS = {
           'Contoh: rumah, air, matahari, makan, ibu, ayah, kucing, pohon, kursi, telepon, komputer, burung, apel, pernikahan, besar, kecil.'
         ], kisacasi: 'Kosakata dasar yang benar-benar langsung dikenal semua orang (sekitar 20% batch). Kata yang jelas layak, golongkan ke tipe ini tanpa ragu.' }
     ]
+  },
+  IT: {
+    label: 'Descrizioni dei tipi',
+    note: 'Le parole sono scritte in minuscolo e senza accenti: papa = papà, citta = città, perche = perché. L\'assenza degli accenti non è mai un motivo per cambiare il tipo.',
+    types: [
+      { title: 'Tipo 1 — Escluso completamente dal gioco', bullets: [
+          'Nomi propri: persone, marchi, aziende e luoghi fuori dall\'Italia (es. mario, parigi, nutella). I luoghi italiani NON sono Tipo 1 (vedi Tipo 2).',
+          'Parolacce, insulti volgari, discorsi d\'odio o contenuti sessuali espliciti (es. cazzo, stronzo, frocio, troia).',
+          'Violenza grave e contenuti molto disturbanti: uccidere, cadaveri, tortura, suicidio, stupro. Parole come morte, morire, guerra o arma NON sono incluse (vedi Tipo 2).',
+          'Droghe e stupefacenti (es. droga, cocaina, eroina). Le bevande alcoliche NON sono Tipo 1 (vedi Tipo 2).',
+          'Nazionalità, etnie, razze, lingue e identità religiose non italiane: automaticamente Tipo 1, per quanto siano conosciute (es. francese, inglese, tedesco, cinese, ebreo, musulmano, cristiano, cattolico, zingaro). Le parole legate all\'Italia (italiano, romano, napoletano) NON sono Tipo 1 (vedi Tipo 2).',
+          'Parole con meno di 3 lettere.',
+          'Parole straniere non ancora entrate nell\'uso italiano (es. performer, editing). Le parole straniere ormai diventate italiane (computer, sport, bar, film, hobby, weekend) NON sono Tipo 1: si valutano normalmente (vedi Tipo 3/4).',
+          'Esclamazioni pure (es. ah, oh, eh, ahi, ehi, uffa). Parole come ciao NON sono incluse: si valutano normalmente (vedi Tipo 3/4).',
+          'Varianti di grafia non standard poco diffuse. Le varianti diffuse sono Tipo 2.',
+          'Parole il cui significato non si riesce a stabilire: se non conosci il significato della parola, segnala Tipo 1.',
+          'Esempi: stronzo — anche se usato spessissimo, resta un insulto volgare (la percezione che sia "leggero" non cambia il tipo); cocaina — stupefacente; inglese — nazionalità e lingua non italiana, automaticamente Tipo 1; mario — nome proprio di persona.'
+        ], kisacasi: 'Nomi propri, parolacce, contenuti sessuali o di violenza grave, droghe, identità non italiane, parole straniere non entrate nell\'italiano, esclamazioni pure, varianti non standard poco diffuse, parole troppo corte o di significato sconosciuto: non compaiono mai nel gioco.' },
+      { title: 'Tipo 2 — Valida, ma limitata/specialistica/sensibile', bullets: [
+          'La parola è reale e corretta, ma una persona media non la incontra liberamente nella vita quotidiana.',
+          'Termini tecnici o specialistici: medicina, diritto, scienza, tecnica (es. biopsia, giurisprudenza, amaurosi).',
+          'Parole rare, arcaiche, letterarie o troppo formali.',
+          'Parole regionali o dialettali, non diffuse nell\'italiano standard nazionale.',
+          'Registro colloquiale e gergo, anche se molto diffuso (es. figo, figata).',
+          'Varianti di grafia non standard ma diffuse (es. obbiettivo → obiettivo). Le varianti poco diffuse sono Tipo 1. La forma standard si valuta normalmente.',
+          'Forme flesse regolari, in cui la desinenza si aggiunge alla radice senza cambiarla: plurali (libri, case), femminili e plurali degli aggettivi (rossa, belli), forme verbali regolari di qualsiasi tempo (parla, avete, andato, andava), forme in -isc- (finisco) e forme con pronome attaccato (dirlo, comprarli). Le forme in cui la radice cambia (vado, sono, hanno, fatto, uomini) NON sono incluse: si valutano in base a quanto sono conosciute (vedi Tipo 3/4).',
+          'Derivati produttivi: diminutivi non lessicalizzati (casetta), superlativi in -issimo (bellissimo), avverbi in -mente dal significato trasparente (velocemente). Le parole diventate autonome (panino, telefonino, finalmente) NON sono incluse.',
+          'Bevande alcoliche (es. vino, birra, grappa).',
+          'Parole con un secondo significato volgare noto a tutti, anche se il significato principale è neutro e prevalente (es. pisello, uccello, finocchio, palle).',
+          'Animali usati comunemente come insulto o nelle bestemmie (es. porco, maiale, vacca, cagna).',
+          'Insulti leggeri (es. stupido, idiota) ed etichette di reato (es. ladro, furto).',
+          'Morte, guerra, armi e sangue (es. morte, morto, guerra, arma, sangue).',
+          'Nomi di malattie e disturbi di salute (es. artrite, influenza, diabete). Parole generiche come malato o dolore NON sono incluse.',
+          'Cose disgustose (es. vomito, pidocchio, puzza).',
+          'Tutti i termini religiosi, compresi i nomi sacri (es. dio, madonna, chiesa, prete, messa, preghiera).',
+          'Luoghi italiani e parole d\'identità legate all\'Italia (es. roma, toscana, italiano, napoletano).',
+          'Esempi: giurisprudenza — termine giuridico; figo — registro colloquiale; libri — plurale regolare di "libro"; parlava — forma verbale regolare di "parlare"; vino — bevanda alcolica; uccello — significato principale neutro, ma con un secondo significato volgare noto a tutti; chiesa — termine religioso.'
+        ], kisacasi: 'La parola è reale e comprensibile, ma troppo tecnica, rara, regionale, colloquiale, grammaticale o sensibile per un uso libero quotidiano.' },
+      { title: 'Tipo 3 — Comune, ma non vocabolario di base (obiettivo: circa 30%, non una regola rigida)', bullets: [
+          'La parola è corretta, conosciuta e capita nella vita quotidiana, ma non è tra le parole più basilari che tutti riconoscono senza pensarci.',
+          'Test: riconosci la parola subito come "casa", oppure ti serve un attimo per pensare "ah sì, questa parola esiste"? Se è la seconda: Tipo 3.',
+          'Spesso più specifica, astratta o legata a un contesto (lavoro, istituzioni, ambiti particolari), ma non un termine tecnico puro (Tipo 2).',
+          'Derivati diventati parole autonome e ben conosciute (es. spiegazione, valutazione, finalmente).',
+          'Formale, ma conosciuta ampiamente senza una formazione specifica.',
+          'Forme in cui la radice cambia e che sono comuni (es. vado, hanno, fatto, uomini): Tipo 3 o 4 in base a quanto sono conosciute.',
+          'Nomi dei mesi e dei giorni: Tipo 3 o 4 in base a quanto sono conosciuti (es. febbraio, lunedi).',
+          'Parole straniere ormai entrate nell\'italiano e saluti come ciao: si valutano come le altre parole, Tipo 3 o 4 in base a quanto sono conosciuti (es. computer, sport, film, ciao).',
+          'Essere nel dizionario o essere insegnata a scuola NON basta.',
+          'Circa il 30% di un batch, come tendenza approssimativa, non come regola rigida.',
+          'Esempi: riunione — comune, ma non concreta come le parole di Tipo 4; spiegare — verbo quotidiano; biblioteca — tutti la conoscono, ma non è un oggetto che si usa ogni giorno; veloce — aggettivo comune, ma meno "immediato" dei nomi concreti di Tipo 4.'
+        ], kisacasi: 'Comune e conosciuta dal parlante medio in Italia (circa il 30% del batch): familiare, ma non vocabolario di base (Tipo 4).' },
+      { title: 'Tipo 4 — Vocabolario di base, il più facile da riconoscere (obiettivo: circa 20%, non una regola rigida)', bullets: [
+          'Parole conosciute davvero da tutti, indipendentemente da età, istruzione o regione.',
+          'Di solito oggetti concreti di tutti i giorni, esseri viventi di base, attività e concetti quotidiani: le prime parole che imparano i bambini.',
+          'Anche derivati e forme con la radice cambiata possono essere Tipo 4, se sono altrettanto basilari (es. panino, sono).',
+          'Sono le parole meno discutibili del dizionario.',
+          'Circa un quinto di un batch dovrebbe essere Tipo 4. Non serve una precisione perfetta, ma tieni d\'occhio questa proporzione.',
+          'Le parole chiaramente adatte vanno messe in questo tipo senza esitare.',
+          'Esempi: casa, acqua, sole, mangiare, mamma, papa (papà), gatto, albero, sedia, telefono, cane, mela, matrimonio, grande, piccolo.'
+        ], kisacasi: 'Vocabolario di base davvero riconosciuto subito da tutti (circa il 20% del batch). Le parole chiaramente adatte vanno in questo tipo senza esitare.' }
+    ]
   }
 };
 
@@ -730,7 +792,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian', IT: 'Italian' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
@@ -883,65 +945,13 @@ function saveProgress() {
   if (isSavingInProgress) {
     // Zaten bir save devam ediyor: yeni bir istek AÇMA, mevcut save bitince
     // tekrar tetiklenmesi için işaretle. Bu sayede hem duplicate kayıt riski
-    // ortadan kalkıyor, hem de bu sırada yapılan yeni seçimler kaybolmuyor.
-    saveAgainNeeded = true;
-    return;
-  }
-
-  var toSave = [];
-  for (var i = 0; i < allWords.length; i++) {
-    if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
-      toSave.push({ idx: i, w: allWords[i], type: selections[i] });
-    }
-  }
-  if (toSave.length === 0) return;
-
-  var batch = toSave.slice(0, SAVE_CHUNK);
-  isSavingInProgress = true;
-  saveAgainNeeded = false;
-  setSave('Saving...');
-
-  var payload = batch.map(function(item) {
-    // row: aynı kelime task içinde tekrar edebildiği için backend'de birincil
-    // eşleştirme anahtarı — bkz. gas_code.js submitBatch.
-    return { kelime: item.w.kelime, row: item.w.row, harf_sayisi: item.w.kelime.length, type: item.type };
-  });
-
-  apiFetch({
-    action: 'submitBatch',
-    worker: workerId,
-    task: TASK,
-    words: JSON.stringify(payload)
-  })
-  .then(function(data) {
-    if (data && data.error) throw new Error(data.error); // sunucu hata dönerse basarili sayma
-    batch.forEach(function(item) { savedSelections[item.idx] = item.type; });
-    isSavingInProgress = false;
-    if (toSave.length > batch.length || saveAgainNeeded) {
-      saveAgainNeeded = false;
-      saveProgress();
-      return;
-    }
-    setSave('Saved ✓');
-    setTimeout(function() { setSave(''); }, 2000);
-  })
-  .catch(function(err) {
-    console.error('[saveProgress] apiFetch failed', {
-      worker: workerId,
-      task: TASK,
-      wordCount: payload.length,
-      name: err && err.name,
-      message: err && err.message,
-      error: err
-    });
-    isSavingInProgress = false;
-    setSave('Retrying...');
-    setTimeout(function() { setSave(''); }, 1500);
+    // ortadan kalkıyor, hem de bu sırada yapılan yeni seçimler kaybol
+      setTimeout(function() { setSave(''); }, 1500);
     setTimeout(saveProgress, 1500); // basarisiz oldu, kisa sure sonra tekrar dene
   });
 }
 
-// ── Sayfa/sekme kapanirken en son hali göndermeyi dene (best-effort) ──────
+// ── Sayfa/sekme kapanırken en son hali göndermeyi dene (best-effort) ──────
 // keepalive:true ile — sekme kapansa bile tarayıcı isteği tamamlamaya çalışır.
 // Önceden bu hiç yoktu; normal fetch sayfa kapanınca iptal olabiliyordu.
 function sendKeepaliveSave() {
@@ -1001,7 +1011,8 @@ function renderSidebar() {
   var desc = DESCRIPTIONS[LANG] || DESCRIPTIONS['TR'];
   document.getElementById('toggleLabel').textContent = desc.label;
   var grid = document.getElementById('typeGrid');
-  grid.innerHTML = desc.types.map(function(d) {
+  var note = desc.note ? '<p class="type-note">' + escapeHtml(desc.note) + '</p>' : '';
+  grid.innerHTML = note + desc.types.map(function(d) {
     return '<div class="type-desc"><h3>' + escapeHtml(d.title) + '</h3><ul>' +
       d.bullets.map(function(b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') +
       '</ul><p class="kisacasi">' + escapeHtml(d.kisacasi) + '</p></div>';
