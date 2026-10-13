@@ -945,13 +945,65 @@ function saveProgress() {
   if (isSavingInProgress) {
     // Zaten bir save devam ediyor: yeni bir istek AÇMA, mevcut save bitince
     // tekrar tetiklenmesi için işaretle. Bu sayede hem duplicate kayıt riski
-    // ortadan kalkıyor, hem de bu sırada yapılan yeni seçimler kaybol
-      setTimeout(function() { setSave(''); }, 1500);
+    // ortadan kalkıyor, hem de bu sırada yapılan yeni seçimler kaybolmuyor.
+    saveAgainNeeded = true;
+    return;
+  }
+
+  var toSave = [];
+  for (var i = 0; i < allWords.length; i++) {
+    if (selections[i] !== undefined && selections[i] !== savedSelections[i]) {
+      toSave.push({ idx: i, w: allWords[i], type: selections[i] });
+    }
+  }
+  if (toSave.length === 0) return;
+
+  var batch = toSave.slice(0, SAVE_CHUNK);
+  isSavingInProgress = true;
+  saveAgainNeeded = false;
+  setSave('Saving...');
+
+  var payload = batch.map(function(item) {
+    // row: aynı kelime task içinde tekrar edebildiği için backend'de birincil
+    // eşleştirme anahtarı — bkz. gas_code.js submitBatch.
+    return { kelime: item.w.kelime, row: item.w.row, harf_sayisi: item.w.kelime.length, type: item.type };
+  });
+
+  apiFetch({
+    action: 'submitBatch',
+    worker: workerId,
+    task: TASK,
+    words: JSON.stringify(payload)
+  })
+  .then(function(data) {
+    if (data && data.error) throw new Error(data.error); // sunucu hata dönerse basarili sayma
+    batch.forEach(function(item) { savedSelections[item.idx] = item.type; });
+    isSavingInProgress = false;
+    if (toSave.length > batch.length || saveAgainNeeded) {
+      saveAgainNeeded = false;
+      saveProgress();
+      return;
+    }
+    setSave('Saved ✓');
+    setTimeout(function() { setSave(''); }, 2000);
+  })
+  .catch(function(err) {
+    console.error('[saveProgress] apiFetch failed', {
+      worker: workerId,
+      task: TASK,
+      wordCount: payload.length,
+      name: err && err.name,
+      message: err && err.message,
+      error: err
+    });
+    isSavingInProgress = false;
+    setSave('Retrying...');
+    setTimeout(function() { setSave(''); }, 1500);
     setTimeout(saveProgress, 1500); // basarisiz oldu, kisa sure sonra tekrar dene
   });
 }
 
-// ── Sayfa/sekme kapanırken en son hali göndermeyi dene (best-effort) ──────
+// ── Sayfa/sekme kapanirken en son hali göndermeyi dene (best-effort) ──────
 // keepalive:true ile — sekme kapansa bile tarayıcı isteği tamamlamaya çalışır.
 // Önceden bu hiç yoktu; normal fetch sayfa kapanınca iptal olabiliyordu.
 function sendKeepaliveSave() {
