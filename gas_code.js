@@ -9,7 +9,8 @@ var RESULTS = {
   'FR': '14YHoEqb12na4NQ4_CUD-O1Rz-AqJeloPvkoJ0YeBg4w',         // FTW Results FR
   'DE': '1BbKGtof9FuBgTcsD1xB3UrGP0ZGtEjkxGpCzEhW-m10',         // FTW Results DE
   'ID': '1lXLSRO-jCs_XT5JDpMsI0S5fH1cbQDBFPlbjSl3g3jQ',         // FTW Results ID
-  'IT': '17WdR86qsLaO0V5SrzmL7Fpf9Avjv7lY37WLZ7YDQobg'          // FTW Results IT
+  'IT': '17WdR86qsLaO0V5SrzmL7Fpf9Avjv7lY37WLZ7YDQobg',         // FTW Results IT
+  'NL': '1Ch9n5OSL_JPFGII1jPLYKcClM6stLZxuUJhBlFC2lg0'          // FTW Results NL
 };
 
 // ─── GET router ───────────────────────────────────────────────────
