@@ -206,10 +206,17 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 12;
+var CODE_VERSION = 13;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v13 DEĞİŞİKLİK LOGU:
+
+  1) NL (Nederlands) desteği eklendi: DESCRIPTIONS.NL, langNames.NL,
+     RESULTS.NL (Word Tiles Results NL). task=NL_xxx olunca sidebar
+     Hollandaca type açıklamalarını gösterir. Sözlük: FTW Dictionaries
+     "NL" sekmesi; sonuçlar: NL_Tasks + NL_Results.
+
   v11 DEĞİŞİKLİK LOGU:
 
   1) İstek süresi 60sn → 120sn. Asıl düzeltme gas_code.js'de: sonuç
@@ -722,6 +729,71 @@ var DESCRIPTIONS = {
           'Esempi: casa, acqua, sole, mangiare, mamma, papa (papà), gatto, albero, sedia, telefono, cane, mela, matrimonio, grande, piccolo.'
         ], kisacasi: 'Vocabolario di base davvero riconosciuto subito da tutti (circa il 20% del batch). Le parole chiaramente adatte vanno in questo tipo senza esitare.' }
     ]
+  },
+  NL: {
+    label: 'Woordtypen',
+    note: 'Accenten en trema\'s zijn weggelaten: een = ook één, reunie = reünie, cafe = café. De letter ĳ telt als één letter (ĳs = 2 letters, tĳd = 3 letters). Ontbrekende accenten zijn nooit een reden om het type te veranderen.',
+    types: [
+      { title: 'Type 1 — Volledig uitgesloten van het spel', bullets: [
+          'Eigennamen: personen, merken, bedrijven en plaatsen buiten Nederland en België (bijv. Abram, Parĳs). Nederlandse en Belgische plaatsnamen vallen hier NIET onder (zie Type 2).',
+          'Scheldwoorden, vulgaire woorden, beledigingen of expliciet seksuele inhoud (bijv. kut, lul, flikker, eikel, neuken).',
+          'Ziektes die vooral als vloek worden gebruikt (bijv. tyfus, tering, kolere) en scheldwoorden met een ziekte erin (bijv. kankerlĳer). Kanker, pokken en pest vallen hier NIET onder (zie Type 2).',
+          'Alle religieuze vloeken, ook de milde (bijv. godverdomme, verdomme, verdorie).',
+          'Doden, moord, zelfmoord, lĳken en marteling (bijv. moord, doden, lĳk, marteling). Dood, oorlog, wapen en bloed vallen hier NIET onder (zie Type 2).',
+          'Drugs (bijv. drugs, wiet, cocaine). Alcohol valt hier NIET onder (zie Type 2).',
+          'Nationaliteit, taal, volk, etniciteit, ras of religieuze identiteit buiten Nederland en België — automatisch Type 1, hoe bekend ook (bijv. Frans, Duits, Turks, Engelsman, jood, moslim, christen). Nederlands en Vlaams vallen hier NIET onder (zie Type 2).',
+          'Afkorting — automatisch Type 1, ongeacht hoe vaak die in het dagelijks leven voorkomt (bijv. AAA, ANWB). Het feit dat het een afkorting is, is genoeg; bekendheid hoeft niet gecontroleerd te worden.',
+          'Pure klanknabootsingen (bijv. au, oei, bah). Tussenwerpsels met betekenis (hallo, nee, hoera) vallen hier NIET onder.',
+          'Leenwoorden die niet ingeburgerd zijn in het Nederlands. Ingeburgerde leenwoorden (team, film, sport) vallen hier NIET onder.',
+          'Zeldzame niet-standaardspellingen. Gangbare varianten zijn Type 2.',
+          'Woorden van minder dan 3 letters, waarbij ĳ als één letter telt (bijv. ĳs, bĳ, hĳ, ei, nu).',
+          'Woorden waarvan de betekenis niet vast te stellen is: als je de betekenis niet kent, markeer het woord als Type 1.',
+          'Voorbeelden: tyfus — wordt vooral als vloek gebruikt, de ziekte heet tegenwoordig anders; verdorie — ook milde religieuze vloeken zijn Type 1; ANWB — afkorting, automatisch Type 1; Frans — niet-Nederlandse nationaliteit en taal; eikel — de betekenis als scheldwoord overheerst die van de vrucht.'
+        ], kisacasi: 'Eigennamen, scheldwoorden, vloeken, seksuele inhoud, doden en marteling, drugs, niet-Nederlandse identiteiten, afkortingen, klanknabootsingen, niet-ingeburgerde leenwoorden, zeldzame spellingvarianten, te korte woorden en onbekende woorden: komen nooit in het spel voor.' },
+      { title: 'Type 2 — Geldig, maar beperkt/specialistisch/gevoelig', bullets: [
+          'Het woord is echt en geldig, maar een gemiddelde persoon komt het in het dagelijks leven niet vrij tegen.',
+          'Vaktermen of specialistische woorden (geneeskunde, recht, techniek, wetenschap).',
+          'Zeldzame, verouderde, literaire of zeer formele woorden.',
+          'Spreektaal en straattaal, ook als die heel gangbaar is (bijv. gaaf, vet in de betekenis “cool”, balen, gozer).',
+          'Woorden die alleen in België gangbaar zijn (bijv. frigo, goesting, kot). Woorden die in Nederland gangbaar zijn, worden normaal beoordeeld, ook als ze in België ongewoon zijn (patat, pinnen).',
+          'Dialectwoorden die niet tot het standaard-Nederlands behoren.',
+          'Gangbare niet-standaardspellingen. Zeldzame varianten zijn Type 1.',
+          'Regelmatige vormen: meervouden (huizen, meisjes), regelmatige werkwoordsvormen (fietste, gefietst, belde), verbogen bijvoeglijke naamwoorden (mooie) en regelmatige trappen van vergelijking (mooier, mooiste). Gangbare onregelmatige vormen (liep, ging, kinderen, beter) vallen hier NIET onder (zie Type 3/4).',
+          'Verkleinwoorden die alleen “een kleine …” betekenen (bijv. huisje, katje, lampje). Verkleinwoorden die een eigen woord zijn geworden (meisje, broodje, koekje) vallen hier NIET onder.',
+          'Regelconforme samenstellingen of afleidingen die gewoon de som van de delen zijn en nauwelijks echt gebruikt worden (bijv. muggenbeet, kermissfeer). Vaste begrippen (ziekenhuis, fietspad) vallen hier NIET onder.',
+          'Namen van alcoholische dranken (bijv. bier, wĳn, jenever).',
+          'Namen van God en heiligen (bijv. god, Allah). Gewone religieuze woorden (kerk, bĳbel, moskee, gebed) vallen hier NIET onder.',
+          'Woorden met een algemeen bekende grove of seksuele bijbetekenis, waarbij de neutrale hoofdbetekenis overheerst (bijv. nicht).',
+          'Dood, oorlog, wapens en bloed (bijv. dood, oorlog, wapen, bloed).',
+          'Ziektes en aandoeningen (bijv. griep), ook kanker, pokken en pest, hoewel die ook als vloek gebruikt worden.',
+          'Misdaad (bijv. dief, diefstal) en milde beledigingen (bijv. stom, dom, idioot).',
+          'Vieze dingen (bijv. poep, kots, snot, luis).',
+          'Nederlandse en Belgische plaatsnamen en identiteitswoorden (bijv. Amsterdam, Antwerpen, Nederlands, Vlaams, Belgisch).',
+          'Voorbeelden: gaaf — spreektaal; frigo — Belgisch, in Nederland zegt men koelkast; huizen — regelmatig meervoud van “huis”; huisje — betekent alleen “klein huis”; muggenbeet — de som van de delen, geen vast begrip; bier — alcohol; kanker — de ziekte overheerst, hoewel het ook een zware vloek is; nicht — neutrale hoofdbetekenis, maar met een algemeen bekende scheldbetekenis.'
+        ], kisacasi: 'Het woord is echt en begrijpelijk, maar te technisch, zeldzaam, Belgisch, informeel, grammaticaal of gevoelig voor vrij dagelijks gebruik.' },
+      { title: 'Type 3 — Alledaags, maar geen basiswoordenschat (doel: ca. 30% — geen strikte regel)', bullets: [
+          'Het woord is correct, bekend en in het dagelijks leven begrijpelijk — maar het hoort niet bij de absolute basiswoordenschat die echt iedereen zonder nadenken herkent.',
+          'Test: herken je het woord meteen, zoals “appel”, of heb je even een moment nodig en denk je “o ja, dat bestaat ook”? In het tweede geval: Type 3.',
+          'Vaak iets specifieker, abstracter of gekoppeld aan een bepaalde context (beroep, instelling, vakgebied), zonder daarom een echte vakterm (Type 2) te zijn.',
+          'Gangbare onregelmatige vormen (bijv. liep, ging, kinderen, beter): Type 3 of 4, afhankelijk van hoe bekend ze zijn.',
+          'Verkleinwoorden die een eigen woord zijn geworden en vaste samenstellingen (bijv. meisje, broodje, ziekenhuis, fietspad): Type 3 of 4.',
+          'Ingeburgerde leenwoorden en tussenwerpsels met betekenis (bijv. team, film, hallo): Type 3 of 4.',
+          'Dieren die ook als scheldwoord worden gebruikt, worden normaal beoordeeld als de diernaam gangbaar is (bijv. varken, koe, aap).',
+          'Gewone religieuze woorden (bijv. kerk, bĳbel, moskee) en alledaagse emoties en negatieve woorden (bijv. verdriet, angst, fout) worden normaal beoordeeld.',
+          'In het woordenboek staan of op school geleerd worden is NIET genoeg.',
+          'Doel: ongeveer 30% van een batch — als grove richting, geen strikte regel.',
+          'Voorbeelden: vergadering — gangbaar, maar niet zo concreet-alledaags als Type 4; uitleggen — alledaags werkwoord; bibliotheek — iedereen kent het, maar geen voorwerp dat je dagelijks gebruikt; snel — gangbaar bijvoeglijk naamwoord, minder “direct” dan concrete zelfstandige naamwoorden van Type 4.'
+        ], kisacasi: 'Alledaags en bekend bij de gemiddelde spreker in Nederland (ca. 30% van de batch) — vertrouwd, maar niet de absolute basiswoordenschat (Type 4).' },
+      { title: 'Type 4 — Basiswoordenschat, het makkelijkst herkenbaar (doel: ca. 20% — geen strikte regel)', bullets: [
+          'Woorden die echt iedereen kent — ongeacht leeftijd, opleiding of afkomst.',
+          'Meestal concrete alledaagse voorwerpen, basale levende wezens, alledaagse handelingen en begrippen — woorden die een kind als eerste leert.',
+          'Ook onregelmatige vormen, eigen verkleinwoorden en vaste samenstellingen kunnen Type 4 zijn als ze net zo basaal zijn (bijv. ging, meisje, ziekenhuis).',
+          'Dit zijn de minst omstreden woorden van het woordenboek.',
+          'Ongeveer een vijfde van een batch zou Type 4 moeten zijn; perfecte nauwkeurigheid is niet nodig, maar houd deze verhouding in de gaten.',
+          'Woorden die dit type duidelijk verdienen, ruimhartig zo indelen.',
+          'Voorbeelden: boom, stoel, telefoon, fiets, huis, kat, vogel, appel, water, eten, groot.'
+        ], kisacasi: 'Basiswoordenschat die echt iedereen meteen kent (ca. 20% van de batch). Woorden die dit duidelijk verdienen, ruimhartig zo indelen.' }
+    ]
   }
 };
 
@@ -792,7 +864,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian', IT: 'Italian' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian', IT: 'Italian', NL: 'Dutch' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
