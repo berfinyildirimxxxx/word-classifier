@@ -206,10 +206,17 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 </div>
 
 <script>
-var CODE_VERSION = 13;
+var CODE_VERSION = 14;
 console.log('Word Classifier CODE_VERSION =', CODE_VERSION);
 
 /*
+  v14 DEĞİŞİKLİK LOGU:
+
+  1) PL (Polski) desteği eklendi: DESCRIPTIONS.PL, langNames.PL,
+     RESULTS.PL (Word Tiles Results PL). task=PL_xxx olunca sidebar
+     Lehçe type açıklamalarını gösterir. Sözlük: FTW Dictionaries
+     "PL" sekmesi; sonuçlar: PL_Tasks + PL_Results.
+
   v13 DEĞİŞİKLİK LOGU:
 
   1) NL (Nederlands) desteği eklendi: DESCRIPTIONS.NL, langNames.NL,
@@ -794,6 +801,74 @@ var DESCRIPTIONS = {
           'Voorbeelden: boom, stoel, telefoon, fiets, huis, kat, vogel, appel, water, eten, groot.'
         ], kisacasi: 'Basiswoordenschat die echt iedereen meteen kent (ca. 20% van de batch). Woorden die dit duidelijk verdienen, ruimhartig zo indelen.' }
     ]
+  },
+  PL: {
+    label: 'Typy słów',
+    note: 'Polskie litery (ą, ć, ę, ł, ń, ó, ś, ź, ż) są osobnymi literami i każda liczy się jako jedna litera. Czasowniki zwrotne występują bez „się” (bać = bać się). Akcenty z innych języków są usunięte (attache). Lista zawiera tylko wybrane formy odmiany (np. mianownik liczby pojedynczej i mnogiej), nie wszystkie przypadki.',
+    types: [
+      { title: 'Typ 1 — Całkowicie wykluczone z gry', bullets: [
+          'Nazwy własne: osoby, marki, firmy oraz miejsca poza Polską (np. Paryż, Berlin). Polskie nazwy miejscowe NIE należą tutaj (zob. Typ 2).',
+          'Wulgaryzmy, przekleństwa, obelgi lub treści jednoznacznie seksualne — razem ze wszystkimi wyrazami pochodnymi (np. kurwa, chuj, jebać, pierdolić, wkurwić). Wyjątek: wyraz pochodny, którego pozytywne znaczenie wyraźnie dominuje i który jest powszechnie używany (np. zajebisty), ocenia się normalnie.',
+          'Złagodzone przekleństwa, jeśli dominuje użycie jako przekleństwo (np. cholera, kurde, psiakrew). Jeśli dominuje pierwotne znaczenie, słowo ocenia się normalnie (kurczę = pisklę).',
+          'Wykrzyknienia i przekleństwa religijne (np. Jezu, Boże, Matko Boska użyte jako wykrzyknienie).',
+          'Nazwy zwierząt, których obraźliwe znaczenie dominuje (np. suka). Zwierzęta, których zwykłe znaczenie jest powszechne (świnia, krowa, małpa), NIE należą tutaj.',
+          'Zabijanie, morderstwo, samobójstwo, zabójca, zwłoki i tortury (np. zabić, zabójca, zwłoki, trup, tortury). Śmierć, wojna, broń i krew NIE należą tutaj (zob. Typ 2).',
+          'Narkotyki (np. narkotyk, kokaina, marihuana). Alkohol NIE należy tutaj (zob. Typ 2).',
+          'Narodowości, języki, grupy etniczne, rasy i tożsamości religijne niezwiązane z Polską — automatycznie Typ 1, niezależnie od tego, jak są znane (np. Niemiec, niemiecki, angielski, Żyd, Cygan, Murzyn). Słowa związane z Polską (Polak, polski, Ślązak) NIE należą tutaj (zob. Typ 2).',
+          'Skrót — automatycznie Typ 1, niezależnie od tego, jak często występuje w codziennym życiu (np. PKP, ABW). Wystarczy sam fakt, że to skrót; nie trzeba sprawdzać, jak jest znany.',
+          'Czyste wykrzyknienia dźwiękowe (np. ach, och, mhm). Wykrzyknienia z treścią (cześć, halo) NIE należą tutaj.',
+          'Zapożyczenia nieprzyswojone w polszczyźnie (np. challenge). Zapożyczenia przyswojone (sport, film, komputer) NIE należą tutaj.',
+          'Rzadkie niestandardowe formy pisowni. Częste warianty to Typ 2.',
+          'Wyrazy krótsze niż 3 litery (np. na, to, ja).',
+          'Wyrazy o nieustalonym znaczeniu: jeśli nie znasz znaczenia słowa, oznacz je jako Typ 1.',
+          'Przykłady: kurwa — wulgaryzm, Typ 1 razem ze wszystkimi formami i pochodnymi (kurwy, wkurwić); cholera — dominuje użycie jako przekleństwo; suka — dominuje znaczenie obraźliwe; PKP — skrót, automatycznie Typ 1; angielski — język niezwiązany z Polską.'
+        ], kisacasi: 'Nazwy własne, wulgaryzmy, przekleństwa, treści seksualne, zabijanie i tortury, narkotyki, tożsamości niezwiązane z Polską, skróty, wykrzyknienia dźwiękowe, nieprzyswojone zapożyczenia, rzadkie warianty pisowni, zbyt krótkie i nieznane wyrazy: nigdy nie pojawiają się w grze.' },
+      { title: 'Typ 2 — Poprawne, ale ograniczone/specjalistyczne/wrażliwe', bullets: [
+          'Słowo jest prawdziwe i poprawne, ale przeciętna osoba nie spotyka go swobodnie w codziennym życiu.',
+          'Terminy fachowe lub specjalistyczne (medycyna, prawo, technika, nauka).',
+          'Słowa rzadkie, przestarzałe, książkowe lub bardzo formalne, w tym przymiotniki od rzadkich nazw (np. wormacki).',
+          'Język potoczny i młodzieżowy, nawet bardzo częsty (np. spoko, ziomek, fajny, kumpel).',
+          'Słowa gwarowe i regionalne (śląskie, podhalańskie, kaszubskie i inne), nieobecne w polszczyźnie ogólnej.',
+          'Częste niestandardowe warianty pisowni. Rzadkie warianty to Typ 1.',
+          'Regularne formy odmiany, w których końcówka dochodzi do niezmienionego tematu: liczba mnoga (domy, koty), formy czasownika (robię, robisz, zrobił), formy przymiotnika (dobra). Formy ze zmienionym tematem, które same są częste (ręce, psy, piszę, ludzie, lepszy), NIE należą tutaj (zob. Typ 3/4).',
+          'Zdrobnienia i zgrubienia, które znaczą tylko „mały/duży …” (np. krzesełko, psisko). Zdrobnienia, które stały się osobnymi słowami (stolik, domek), NIE należą tutaj.',
+          'Produktywne rzeczowniki odczasownikowe (np. mycie) i produktywne formy z „nie-” (np. niedobry). Słowa zleksykalizowane (zebranie, mieszkanie, jedzenie, niebieski) NIE należą tutaj.',
+          'Złożenia i derywaty zgodne z regułami, ale będące tylko sumą części i rzadko używane.',
+          'Akceptowane, złagodzone zamienniki wulgaryzmów (np. wkurzony).',
+          'Nazwy napojów alkoholowych (np. piwo, wino, wódka).',
+          'Imiona Boga i postaci świętych (np. Bóg). Zwykłe słowa religijne (kościół, biblia, msza) NIE należą tutaj.',
+          'Słowa z powszechnie znanym wulgarnym lub seksualnym drugim znaczeniem, gdy neutralne znaczenie główne dominuje.',
+          'Śmierć, wojna, broń i krew (np. śmierć, wojna, broń, krew).',
+          'Choroby i dolegliwości (np. grypa).',
+          'Przestępstwa (np. złodziej, kradzież) i łagodne obelgi (np. głupi, idiota).',
+          'Rzeczy obrzydliwe (np. wymioty, wesz, smark).',
+          'Polskie nazwy miejscowe i słowa tożsamości związane z Polską (np. Polak, polski, warszawski, Ślązak).',
+          'Przykłady: spoko — język potoczny; domy — regularna liczba mnoga od „dom”; krzesełko — znaczy tylko „małe krzesło”; mycie — produktywny rzeczownik odczasownikowy; wkurzony — akceptowany zamiennik wulgaryzmu; piwo — alkohol; Polak — tożsamość związana z Polską.'
+        ], kisacasi: 'Słowo jest prawdziwe i zrozumiałe, ale zbyt fachowe, rzadkie, potoczne, regionalne, gramatyczne lub wrażliwe do swobodnego codziennego użytku.' },
+      { title: 'Typ 3 — Codzienne, ale nie podstawowe słownictwo (cel: ok. 30% — bez ścisłej normy)', bullets: [
+          'Słowo jest poprawne, znane i zrozumiałe w codziennym życiu — ale nie należy do absolutnie podstawowego słownictwa, które każdy rozpoznaje od razu, bez zastanowienia.',
+          'Test: czy rozpoznajesz słowo od razu, jak „jabłko”, czy potrzebujesz chwili i myślisz „aha, takie słowo też jest”? W drugim przypadku: Typ 3.',
+          'Często bardziej szczegółowe, abstrakcyjne lub związane z określonym kontekstem (praca, instytucja, dziedzina), ale nie jest czysto fachowym terminem (Typ 2).',
+          'Częste formy ze zmienionym tematem (np. ręce, psy, piszę, ludzie, szedł, lepszy): Typ 3 lub 4, zależnie od tego, jak są znane.',
+          'Zdrobnienia i rzeczowniki odczasownikowe, które stały się osobnymi słowami, oraz przymiotniki od imiesłowów (np. stolik, domek, zebranie, mieszkanie, ukryty): Typ 3 lub 4.',
+          'Przyswojone zapożyczenia i wykrzyknienia z treścią (np. sport, film, komputer, cześć): Typ 3 lub 4.',
+          'Zwierzęta, których nazwy bywają też obelgą, ocenia się normalnie, jeśli zwykłe znaczenie jest powszechne (np. świnia, krowa, małpa).',
+          'Zwykłe słowa religijne (np. kościół, biblia) oraz codzienne uczucia i słowa negatywne (np. smutek, strach, błąd) ocenia się normalnie.',
+          'Czasowniki dokonane i niedokonane to osobne słowa: robić i zrobić ocenia się oddzielnie.',
+          'Samo występowanie w słowniku lub nauka w szkole NIE wystarcza.',
+          'Cel: około 30% partii — jako ogólna tendencja, nie ścisła norma.',
+          'Przykłady: zebranie — znane, ale nie tak konkretne i codzienne jak Typ 4; wyjaśnić — codzienny czasownik; biblioteka — każdy ją zna, ale to nie przedmiot codziennego użytku; szybki — częsty przymiotnik, mniej „natychmiastowy” niż konkretne rzeczowniki z Typu 4.'
+        ], kisacasi: 'Codzienne i znane przeciętnemu użytkownikowi języka w Polsce (ok. 30% partii) — znajome, ale nie absolutnie podstawowe słownictwo (Typ 4).' },
+      { title: 'Typ 4 — Słownictwo podstawowe, najprostsze do rozpoznania (cel: ok. 20% — bez ścisłej normy)', bullets: [
+          'Słowa, które naprawdę zna każdy — niezależnie od wieku, wykształcenia czy pochodzenia.',
+          'Zwykle konkretne przedmioty codziennego użytku, podstawowe istoty żywe, codzienne czynności i pojęcia — słowa, których dziecko uczy się najpierw.',
+          'Także formy ze zmienionym tematem, zdrobnienia i rzeczowniki odczasownikowe mogą być Typem 4, jeśli są równie podstawowe (np. ludzie, dzieci, jedzenie).',
+          'To najmniej sporne słowa w słowniku.',
+          'Około jednej piątej partii powinno należeć do tego typu; idealna dokładność nie jest potrzebna, ale warto pilnować tej proporcji.',
+          'Słowa, które wyraźnie na to zasługują, klasyfikuj tu hojnie.',
+          'Przykłady: dom, drzewo, krzesło, telefon, kot, pies, ptak, jabłko, woda, chleb, jeść, duży.'
+        ], kisacasi: 'Podstawowe słownictwo, które naprawdę każdy zna od razu (ok. 20% partii). Słowa, które wyraźnie na to zasługują, klasyfikuj tu hojnie.' }
+    ]
   }
 };
 
@@ -864,7 +939,7 @@ function startApp() {
   loadAllWords();
 }
 (function() {
-  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian', IT: 'Italian', NL: 'Dutch' };
+  var langNames = { TR: 'Turkish', EN: 'English', RU: 'Russian', ES: 'Spanish', PT: 'Portuguese', FR: 'French', DE: 'German', ID: 'Indonesian', IT: 'Italian', NL: 'Dutch', PL: 'Polish' };
   var name = langNames[LANG] || LANG;
   document.getElementById('loginTitle').textContent = name ? 'Word Classifier — ' + name : 'Word Classifier';
   if (PRE_WORKER) {
